@@ -29,6 +29,7 @@ function formatPrescription(row) {
     phone: row.phone,
     medicines: JSON.parse(row.medicines || '[]'),
     category: row.category,
+    source: row.source,
     status: row.status,
     imageCount: row._count?.images ?? (row.images ? row.images.length : 0),
     branchId: row.branchId,
@@ -184,11 +185,12 @@ app.get('/api/prescriptions', requireAuth, async (req, res) => {
 });
 
 const ALLOWED_CATEGORIES = ['دەرمان', 'میلک', 'بیوتی', 'تەجهیزات'];
+const ALLOWED_SOURCES = ['حکومی', 'تایبەت'];
 
 app.post('/api/prescriptions', requireAuth, async (req, res) => {
   if (!req.user.branchId) return res.status(400).json({ error: 'no_branch_assigned' });
 
-  const { doctorName, phone, medicines, category, images } = req.body || {};
+  const { doctorName, phone, medicines, category, source, images } = req.body || {};
   const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
   const imageList = Array.isArray(images) ? images : [];
   const imageCreates = imageList
@@ -197,20 +199,50 @@ app.post('/api/prescriptions', requireAuth, async (req, res) => {
       const type = allowedTypes.includes(img.mediaType) ? img.mediaType : 'image/jpeg';
       return { imageData: `data:${type};base64,${img.imageBase64}` };
     });
+  const medicineList = Array.isArray(medicines) ? medicines : [];
 
   const row = await prisma.prescription.create({
     data: {
       doctorName: doctorName || '',
       phone: phone || '',
-      medicines: JSON.stringify(Array.isArray(medicines) ? medicines : []),
+      medicines: JSON.stringify(medicineList),
       category: ALLOWED_CATEGORIES.includes(category) ? category : 'دەرمان',
+      source: ALLOWED_SOURCES.includes(source) ? source : 'تایبەت',
       branchId: req.user.branchId,
       userId: req.user.id,
       images: imageCreates.length ? { create: imageCreates } : undefined,
     },
     include: { _count: { select: { images: true } } },
   });
+
+  // Remember one photo per item name, so next time it's typed the photo
+  // can be shown automatically. Uses the first uploaded photo of this order.
+  if (imageCreates.length && medicineList.length) {
+    const imageData = imageCreates[0].imageData;
+    await Promise.all(
+      medicineList
+        .map((m) => String(m).trim().toLowerCase())
+        .filter(Boolean)
+        .map((name) =>
+          prisma.itemImage.upsert({
+            where: { name },
+            update: { imageData },
+            create: { name, imageData },
+          }),
+        ),
+    );
+  }
+
   res.status(201).json(formatPrescription(row));
+});
+
+// Look up a remembered photo for an item/medicine name — filled in as
+// prescriptions are saved with photos.
+app.get('/api/item-image', requireAuth, async (req, res) => {
+  const name = (req.query.name || '').toString().trim().toLowerCase();
+  if (!name) return res.status(400).json({ error: 'missing_name' });
+  const row = await prisma.itemImage.findUnique({ where: { name } });
+  res.json({ imageData: row?.imageData ?? null });
 });
 
 // Fetch every saved photo for one prescription — kept out of the list
@@ -279,8 +311,11 @@ app.get('/api/reports/overview', requireAuth, requireAdmin, async (req, res) => 
   const byEmployee = {};
   const byDoctor = {};
   const byCategory = {};
+  const bySource = {};
   const medicineCounts = {};
   const byDay = {};
+  const byMonth = {};
+  const byYear = {};
 
   for (const p of prescriptions) {
     const branchName = branchNameById[p.branchId] || 'نەزانراو';
@@ -295,6 +330,9 @@ app.get('/api/reports/overview', requireAuth, requireAdmin, async (req, res) => 
     const categoryKey = p.category || 'دەرمان';
     byCategory[categoryKey] = (byCategory[categoryKey] || 0) + 1;
 
+    const sourceKey = p.source || 'تایبەت';
+    bySource[sourceKey] = (bySource[sourceKey] || 0) + 1;
+
     let meds = [];
     try {
       meds = JSON.parse(p.medicines || '[]');
@@ -304,8 +342,13 @@ app.get('/api/reports/overview', requireAuth, requireAdmin, async (req, res) => 
       if (key) medicineCounts[key] = (medicineCounts[key] || 0) + 1;
     });
 
-    const day = p.createdAt.toISOString().slice(0, 10);
+    const iso = p.createdAt.toISOString();
+    const day = iso.slice(0, 10);
+    const month = iso.slice(0, 7);
+    const year = iso.slice(0, 4);
     byDay[day] = (byDay[day] || 0) + 1;
+    byMonth[month] = (byMonth[month] || 0) + 1;
+    byYear[year] = (byYear[year] || 0) + 1;
   }
 
   const toSortedArray = (obj) =>
@@ -313,16 +356,22 @@ app.get('/api/reports/overview', requireAuth, requireAdmin, async (req, res) => 
       .map(([name, count]) => ({ name, count }))
       .sort((a, b) => b.count - a.count);
 
+  const toDateSortedArray = (obj) =>
+    Object.entries(obj)
+      .sort((a, b) => (a[0] < b[0] ? 1 : -1))
+      .map(([name, count]) => ({ name, count }));
+
   res.json({
     total: prescriptions.length,
     byBranch: toSortedArray(byBranch),
     byEmployee: toSortedArray(byEmployee),
     byDoctor: toSortedArray(byDoctor),
     byCategory: toSortedArray(byCategory),
+    bySource: toSortedArray(bySource),
     topMedicines: toSortedArray(medicineCounts).slice(0, 20),
-    byDay: Object.entries(byDay)
-      .sort((a, b) => (a[0] < b[0] ? -1 : 1))
-      .map(([date, count]) => ({ date, count })),
+    byDay: toDateSortedArray(byDay),
+    byMonth: toDateSortedArray(byMonth),
+    byYear: toDateSortedArray(byYear),
   });
 });
 
@@ -350,6 +399,7 @@ app.get('/api/reports/doctor', requireAuth, requireAdmin, async (req, res) => {
     employeeEmail: userEmailById[p.userId] || null,
     medicines: JSON.parse(p.medicines || '[]'),
     category: p.category,
+    source: p.source,
     phone: p.phone,
     createdAt: p.createdAt,
   }));

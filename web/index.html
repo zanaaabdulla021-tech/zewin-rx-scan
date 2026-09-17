@@ -197,6 +197,13 @@
             </select>
           </div>
           <div class="field">
+            <label for="f-source">سەرچاوە</label>
+            <select id="f-source">
+              <option value="تایبەت">تایبەت</option>
+              <option value="حکومی">حکومی</option>
+            </select>
+          </div>
+          <div class="field">
             <label for="f-doctor">ناوی دکتۆر</label>
             <input type="text" id="f-doctor" placeholder="بۆ نموونە: د. ئاراس محەمەد">
           </div>
@@ -244,6 +251,22 @@
       <section>
         <p class="section-label">بەپێی جۆر</p>
         <div class="admin-list" id="report-by-category"></div>
+      </section>
+      <section>
+        <p class="section-label">بەپێی سەرچاوە (حکومی/تایبەت)</p>
+        <div class="admin-list" id="report-by-source"></div>
+      </section>
+      <section>
+        <p class="section-label">بەپێی ساڵ</p>
+        <div class="admin-list" id="report-by-year"></div>
+      </section>
+      <section>
+        <p class="section-label">بەپێی مانگ</p>
+        <div class="admin-list" id="report-by-month"></div>
+      </section>
+      <section>
+        <p class="section-label">بەپێی ڕۆژ (٣٠ ڕۆژی کۆتایی)</p>
+        <div class="admin-list" id="report-by-day"></div>
       </section>
       <section>
         <p class="section-label">بەپێی دکتۆر</p>
@@ -581,13 +604,40 @@
     }
   });
 
+  let itemImageDebounce = null;
+
   function addMedRow(value){
+    const wrap = document.createElement('div');
+    wrap.style.marginBottom = '4px';
     const row = document.createElement('div');
     row.className = 'med-row';
     row.innerHTML = '<input type="text" placeholder="ناوی دەرمان" value="'+escapeAttr(value||'')+'">'+
       '<button type="button" class="icon-btn"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>';
-    row.querySelector('button').addEventListener('click', () => row.remove());
-    medList.appendChild(row);
+    const thumbHolder = document.createElement('div');
+    thumbHolder.style.cssText = 'margin-top:4px;';
+    row.querySelector('button').addEventListener('click', () => wrap.remove());
+    const input = row.querySelector('input');
+    const checkItemImage = () => {
+      const name = input.value.trim();
+      thumbHolder.innerHTML = '';
+      if (!name) return;
+      clearTimeout(itemImageDebounce);
+      itemImageDebounce = setTimeout(async () => {
+        try{
+          const data = await api('/api/item-image?name=' + encodeURIComponent(name));
+          if (data.imageData){
+            thumbHolder.innerHTML = '<div style="display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--ink-soft);">'+
+              '<img src="'+data.imageData+'" style="width:34px;height:34px;object-fit:cover;border-radius:6px;border:1px solid var(--line);">'+
+              '<span>وێنەی پێشووی ئەم ئایتمە</span></div>';
+          }
+        } catch(e){}
+      }, 500);
+    };
+    input.addEventListener('input', checkItemImage);
+    wrap.appendChild(row);
+    wrap.appendChild(thumbHolder);
+    medList.appendChild(wrap);
+    if (value) checkItemImage();
   }
   function escapeAttr(s){ return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;'); }
   function escapeHtml(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
@@ -599,6 +649,7 @@
     fDoctor.value = (data && data.doctorName) || '';
     fPhone.value = (data && data.phone) || '';
     $('f-category').value = 'دەرمان';
+    $('f-source').value = 'تایبەت';
     medList.innerHTML = '';
     const meds = (data && Array.isArray(data.medicines)) ? data.medicines.filter(Boolean) : [];
     if (meds.length === 0) addMedRow(''); else meds.forEach(m => addMedRow(m));
@@ -610,14 +661,15 @@
     const doctorName = fDoctor.value.trim();
     const phone = fPhone.value.trim();
     const category = $('f-category').value;
-    const medicines = Array.from(medList.querySelectorAll('input')).map(i => i.value.trim()).filter(Boolean);
+    const source = $('f-source').value;
+    const medicines = Array.from(medList.querySelectorAll('.med-row input')).map(i => i.value.trim()).filter(Boolean);
     if (!doctorName && !phone && medicines.length === 0){
       showNotice('تکایە هیچ نەبێت یەک خانە پڕ بکەوە پێش خەزنکردن.');
       return;
     }
     $('save-btn').disabled = true;
     try{
-      const body = {doctorName, phone, medicines, category};
+      const body = {doctorName, phone, medicines, category, source};
       if (currentFiles.length){
         body.images = await Promise.all(currentFiles.map(async f => ({
           imageBase64: await fileToBase64(f),
@@ -668,7 +720,7 @@
       const extraMeta = [r.branchName, r.employeeEmail].filter(Boolean).join(' · ');
       item.innerHTML =
         '<div class="history-head"><div class="hh-main">'+
-          '<div class="doc">'+escapeHtml(r.doctorName||'بێ ناوی دکتۆر')+' <span style="font-weight:400;color:var(--ink-soft);">· '+escapeHtml(r.category||'دەرمان')+'</span></div>'+
+          '<div class="doc">'+escapeHtml(r.doctorName||'بێ ناوی دکتۆر')+' <span style="font-weight:400;color:var(--ink-soft);">· '+escapeHtml(r.category||'دەرمان')+' · '+escapeHtml(r.source||'تایبەت')+'</span></div>'+
           '<div class="meta">'+escapeHtml(dateStr)+' · '+r.medicines.length+' دەرمان'+(extraMeta ? ' · '+escapeHtml(extraMeta) : '')+'</div>'+
         '</div>'+
         '<span class="status-badge '+status+'">'+statusLabel(status)+'</span>'+
@@ -728,7 +780,7 @@
     if (!term) return allHistoryRows;
     return allHistoryRows.filter(r => {
       const haystack = [
-        r.doctorName, r.phone, r.category, r.branchName, r.employeeEmail,
+        r.doctorName, r.phone, r.category, r.source, r.branchName, r.employeeEmail,
         ...(r.medicines||[])
       ].filter(Boolean).join(' ').toLowerCase();
       return haystack.includes(term);
@@ -863,6 +915,10 @@
       $('report-by-branch').innerHTML = data.byBranch.map(r => reportRow(r.name, r.count)).join('') || '<div class="empty-hist">هیچ نییە</div>';
       $('report-by-employee').innerHTML = data.byEmployee.map(r => reportRow(r.name, r.count)).join('') || '<div class="empty-hist">هیچ نییە</div>';
       $('report-by-category').innerHTML = (data.byCategory||[]).map(r => reportRow(r.name, r.count)).join('') || '<div class="empty-hist">هیچ نییە</div>';
+      $('report-by-source').innerHTML = (data.bySource||[]).map(r => reportRow(r.name, r.count)).join('') || '<div class="empty-hist">هیچ نییە</div>';
+      $('report-by-year').innerHTML = (data.byYear||[]).map(r => reportRow(r.name, r.count)).join('') || '<div class="empty-hist">هیچ نییە</div>';
+      $('report-by-month').innerHTML = (data.byMonth||[]).map(r => reportRow(r.name, r.count)).join('') || '<div class="empty-hist">هیچ نییە</div>';
+      $('report-by-day').innerHTML = (data.byDay||[]).slice(0,30).map(r => reportRow(r.name, r.count)).join('') || '<div class="empty-hist">هیچ نییە</div>';
       $('report-top-medicines').innerHTML = data.topMedicines.map(r => reportRow(r.name, r.count)).join('') || '<div class="empty-hist">هیچ نییە</div>';
 
       allDoctorRows = data.byDoctor;
@@ -884,7 +940,7 @@
       list.innerHTML = data.prescriptions.map(p => {
         const dateStr = new Date(p.createdAt).toLocaleDateString('ckb', {year:'numeric', month:'short', day:'numeric'});
         return '<div class="admin-row" style="align-items:flex-start;flex-direction:column;gap:4px;">'+
-          '<span>'+escapeHtml(p.branchName||'—')+' · '+escapeHtml(p.employeeEmail||'—')+' · '+escapeHtml(p.category||'دەرمان')+' · '+escapeHtml(dateStr)+'</span>'+
+          '<span>'+escapeHtml(p.branchName||'—')+' · '+escapeHtml(p.employeeEmail||'—')+' · '+escapeHtml(p.category||'دەرمان')+' · '+escapeHtml(p.source||'تایبەت')+' · '+escapeHtml(dateStr)+'</span>'+
           '<span class="meta">'+(p.medicines.length ? escapeHtml(p.medicines.join('، ')) : 'دەرمانێک تۆمار نەکراوە')+'</span>'+
         '</div>';
       }).join('');

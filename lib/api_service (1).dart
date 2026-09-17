@@ -31,7 +31,7 @@ class HistoryScreenState extends State<HistoryScreen> {
     final term = _searchTerm.toLowerCase();
     return _items.where((p) {
       final haystack = [
-        p.doctorName, p.phone, p.category, p.branchName ?? '', p.employeeEmail ?? '',
+        p.doctorName, p.phone, p.category, p.source, p.branchName ?? '', p.employeeEmail ?? '',
         ...p.medicines,
       ].join(' ').toLowerCase();
       return haystack.contains(term);
@@ -249,7 +249,7 @@ class HistoryScreenState extends State<HistoryScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          '${p.doctorName.isEmpty ? "بێ ناوی دکتۆر" : p.doctorName} · ${p.category}',
+                          '${p.doctorName.isEmpty ? "بێ ناوی دکتۆر" : p.doctorName} · ${p.category} · ${p.source}',
                           style: const TextStyle(fontSize: 14.5, fontWeight: FontWeight.w600, color: RxColors.ink),
                           overflow: TextOverflow.ellipsis,
                         ),

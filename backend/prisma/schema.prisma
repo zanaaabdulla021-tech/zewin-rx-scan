@@ -34,6 +34,7 @@ model Prescription {
   phone      String             @default("")
   medicines  String             @db.Text // JSON-encoded string[]
   category   String             @default("دەرمان") // "دەرمان" | "میلک" | "بیوتی" | "تەجهیزات"
+  source     String             @default("تایبەت") // "حکومی" | "تایبەت"
   status     String             @default("pending") // "pending" | "approved" | "rejected"
   images     PrescriptionImage[]
   branchId   Int
@@ -49,4 +50,12 @@ model PrescriptionImage {
   prescriptionId Int
   prescription   Prescription @relation(fields: [prescriptionId], references: [id], onDelete: Cascade)
   createdAt      DateTime     @default(now())
+}
+
+// A remembered photo per item/medicine name, so the next time someone
+// scans the same item its picture can be shown automatically.
+model ItemImage {
+  name      String   @id // normalized (trimmed, lowercased) medicine name
+  imageData String   @db.Text
+  updatedAt DateTime @updatedAt
 }

@@ -97,6 +97,18 @@ class _ReportsScreenState extends State<ReportsScreen> {
           _sectionTitle('بەپێی جۆر'),
           ...byCategory.map((r) => _row(r['name'] as String, '${r['count']}')),
           const SizedBox(height: 22),
+          _sectionTitle('بەپێی سەرچاوە (حکومی/تایبەت)'),
+          ...(data['bySource'] as List? ?? []).map((r) => _row(r['name'] as String, '${r['count']}')),
+          const SizedBox(height: 22),
+          _sectionTitle('بەپێی ساڵ'),
+          ...(data['byYear'] as List? ?? []).map((r) => _row(r['name'] as String, '${r['count']}')),
+          const SizedBox(height: 22),
+          _sectionTitle('بەپێی مانگ'),
+          ...(data['byMonth'] as List? ?? []).map((r) => _row(r['name'] as String, '${r['count']}')),
+          const SizedBox(height: 22),
+          _sectionTitle('بەپێی ڕۆژ (٣٠ ڕۆژی کۆتایی)'),
+          ...((data['byDay'] as List? ?? []).take(30)).map((r) => _row(r['name'] as String, '${r['count']}')),
+          const SizedBox(height: 22),
           _sectionTitle('بەپێی دکتۆر (کرتە بکە بۆ وردەکاری)'),
           TextField(
             controller: _doctorSearchCtrl,
@@ -153,7 +165,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              '${p['branchName'] ?? "—"} · ${p['employeeEmail'] ?? "—"} · ${p['category'] ?? "دەرمان"} · $dateStr',
+              '${p['branchName'] ?? "—"} · ${p['employeeEmail'] ?? "—"} · ${p['category'] ?? "دەرمان"} · ${p['source'] ?? "تایبەت"} · $dateStr',
               style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 3),

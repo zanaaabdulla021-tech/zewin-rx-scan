@@ -4,6 +4,7 @@ class Prescription {
   final String phone;
   final List<String> medicines;
   final String category;
+  final String source; // "حکومی" | "تایبەت"
   final String status; // "pending" | "approved" | "rejected"
   final int imageCount;
   final String? branchName;
@@ -16,6 +17,7 @@ class Prescription {
     required this.phone,
     required this.medicines,
     required this.category,
+    required this.source,
     required this.status,
     required this.imageCount,
     this.branchName,
@@ -31,6 +33,7 @@ class Prescription {
             .map((e) => e.toString())
             .toList(),
         category: (j['category'] as String?) ?? 'دەرمان',
+        source: (j['source'] as String?) ?? 'تایبەت',
         status: (j['status'] as String?) ?? 'pending',
         imageCount: (j['imageCount'] as int?) ?? 0,
         branchName: j['branchName'] as String?,

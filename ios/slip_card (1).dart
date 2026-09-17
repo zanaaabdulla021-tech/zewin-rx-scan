@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -28,10 +29,14 @@ class _FormScreenState extends State<FormScreen> {
   late final TextEditingController _doctorCtrl;
   late final TextEditingController _phoneCtrl;
   late List<TextEditingController> _medCtrls;
+  final Map<int, String?> _itemPreviews = {};
+  final Map<int, Timer> _debouncers = {};
   String _category = 'دەرمان';
+  String _source = 'تایبەت';
   bool _saving = false;
 
   static const categories = ['دەرمان', 'میلک', 'بیوتی', 'تەجهیزات'];
+  static const sources = ['تایبەت', 'حکومی'];
 
   @override
   void initState() {
@@ -40,6 +45,9 @@ class _FormScreenState extends State<FormScreen> {
     _phoneCtrl = TextEditingController(text: widget.initialPhone);
     final meds = widget.initialMedicines.isEmpty ? [''] : widget.initialMedicines;
     _medCtrls = meds.map((m) => TextEditingController(text: m)).toList();
+    for (var i = 0; i < _medCtrls.length; i++) {
+      if (_medCtrls[i].text.trim().isNotEmpty) _lookupItemImage(i);
+    }
   }
 
   @override
@@ -48,6 +56,9 @@ class _FormScreenState extends State<FormScreen> {
     _phoneCtrl.dispose();
     for (final c in _medCtrls) {
       c.dispose();
+    }
+    for (final t in _debouncers.values) {
+      t.cancel();
     }
     super.dispose();
   }
@@ -60,7 +71,24 @@ class _FormScreenState extends State<FormScreen> {
     setState(() {
       _medCtrls[index].dispose();
       _medCtrls.removeAt(index);
+      _itemPreviews.remove(index);
     });
+  }
+
+  void _onMedChanged(int index, String value) {
+    _itemPreviews[index] = null;
+    _debouncers[index]?.cancel();
+    _debouncers[index] = Timer(const Duration(milliseconds: 500), () => _lookupItemImage(index));
+  }
+
+  Future<void> _lookupItemImage(int index) async {
+    if (index >= _medCtrls.length) return;
+    final name = _medCtrls[index].text.trim();
+    if (name.isEmpty) return;
+    try {
+      final img = await ApiService().getItemImage(name);
+      if (mounted) setState(() => _itemPreviews[index] = img);
+    } catch (_) {}
   }
 
   Future<void> _save() async {
@@ -98,6 +126,7 @@ class _FormScreenState extends State<FormScreen> {
         phone: phone,
         medicines: medicines,
         category: _category,
+        source: _source,
         images: images,
       );
       if (!mounted) return;
@@ -148,6 +177,21 @@ class _FormScreenState extends State<FormScreen> {
                   ],
                 ),
                 const SizedBox(height: 14),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const Text('سەرچاوە', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: RxColors.inkSoft)),
+                    const SizedBox(height: 6),
+                    DropdownButtonFormField<String>(
+                      initialValue: _source,
+                      items: sources
+                          .map((c) => DropdownMenuItem(value: c, child: Text(c)))
+                          .toList(),
+                      onChanged: (v) => setState(() => _source = v ?? 'تایبەت'),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 14),
                 _field('ناوی دکتۆر', _doctorCtrl, hint: 'بۆ نموونە: د. ئاراس محەمەد'),
                 const SizedBox(height: 14),
                 _field('ژمارەی مۆبایل', _phoneCtrl,
@@ -159,31 +203,56 @@ class _FormScreenState extends State<FormScreen> {
                 ..._medCtrls.asMap().entries.map((entry) {
                   final i = entry.key;
                   final ctrl = entry.value;
+                  final preview = _itemPreviews[i];
                   return Padding(
                     padding: const EdgeInsets.only(bottom: 8),
-                    child: Row(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Expanded(
-                          child: TextField(
-                            controller: ctrl,
-                            decoration: const InputDecoration(hintText: 'ناوی دەرمان'),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        InkWell(
-                          onTap: () => _removeMedRow(i),
-                          borderRadius: BorderRadius.circular(8),
-                          child: Container(
-                            width: 36,
-                            height: 36,
-                            decoration: BoxDecoration(
-                              color: RxColors.paper,
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(color: RxColors.line),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: TextField(
+                                controller: ctrl,
+                                onChanged: (v) => _onMedChanged(i, v),
+                                decoration: const InputDecoration(hintText: 'ناوی دەرمان'),
+                              ),
                             ),
-                            child: const Icon(Icons.close, size: 16, color: RxColors.stampDeep),
-                          ),
+                            const SizedBox(width: 8),
+                            InkWell(
+                              onTap: () => _removeMedRow(i),
+                              borderRadius: BorderRadius.circular(8),
+                              child: Container(
+                                width: 36,
+                                height: 36,
+                                decoration: BoxDecoration(
+                                  color: RxColors.paper,
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(color: RxColors.line),
+                                ),
+                                child: const Icon(Icons.close, size: 16, color: RxColors.stampDeep),
+                              ),
+                            ),
+                          ],
                         ),
+                        if (preview != null && preview.contains(','))
+                          Padding(
+                            padding: const EdgeInsets.only(top: 5),
+                            child: Row(
+                              children: [
+                                ClipRRect(
+                                  borderRadius: BorderRadius.circular(6),
+                                  child: Image.memory(
+                                    base64Decode(preview.split(',').last),
+                                    width: 34, height: 34, fit: BoxFit.cover,
+                                  ),
+                                ),
+                                const SizedBox(width: 6),
+                                const Text('وێنەی پێشووی ئەم ئایتمە',
+                                    style: TextStyle(fontSize: 11.5, color: RxColors.inkSoft)),
+                              ],
+                            ),
+                          ),
                       ],
                     ),
                   );

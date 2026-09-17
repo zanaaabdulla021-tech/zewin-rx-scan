@@ -66,6 +66,7 @@ class ApiService {
     required String phone,
     required List<String> medicines,
     required String category,
+    required String source,
     List<Map<String, String>>? images,
   }) {
     return _request('POST', '/api/prescriptions', body: {
@@ -73,8 +74,15 @@ class ApiService {
       'phone': phone,
       'medicines': medicines,
       'category': category,
+      'source': source,
       if (images != null && images.isNotEmpty) 'images': images,
     });
+  }
+
+  Future<String?> getItemImage(String name) async {
+    final data = await _request('GET', '/api/item-image?name=${Uri.encodeComponent(name)}')
+        as Map<String, dynamic>;
+    return data['imageData'] as String?;
   }
 
   Future<List<String>> getPrescriptionImages(int id) async {
