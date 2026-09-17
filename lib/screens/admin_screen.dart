@@ -67,7 +67,7 @@ class _AdminScreenState extends State<AdminScreen> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('ئیمەیلەکە پێشتر بەکارهاتووە یان هەڵەیەک ڕوویدا')),
+        const SnackBar(content: Text('That email is already taken, or something went wrong')),
       );
     }
   }
@@ -83,53 +83,53 @@ class _AdminScreenState extends State<AdminScreen> {
       child: ListView(
         padding: const EdgeInsets.all(18),
         children: [
-          const Text('لقەکان', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: RxColors.inkSoft)),
+          const Text('Branches', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: RxColors.inkSoft)),
           const SizedBox(height: 10),
           ..._branches.map((b) => _row(b.name, '', () async {
                 await _api.deleteBranch(b.id);
                 _load();
               })),
-          if (_branches.isEmpty) _emptyLine('هیچ لقێک نییە'),
+          if (_branches.isEmpty) _emptyLine('No branches'),
           const SizedBox(height: 12),
           _card(Row(
             children: [
               Expanded(
                 child: TextField(
                   controller: _branchNameCtrl,
-                  decoration: const InputDecoration(hintText: 'ناوی لقی نوێ'),
+                  decoration: const InputDecoration(hintText: 'New branch name'),
                 ),
               ),
               const SizedBox(width: 10),
-              ElevatedButton(onPressed: _addBranch, child: const Text('زیادکردن')),
+              ElevatedButton(onPressed: _addBranch, child: const Text('Add')),
             ],
           )),
           const SizedBox(height: 28),
-          const Text('یوزەرەکان', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: RxColors.inkSoft)),
+          const Text('Users', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: RxColors.inkSoft)),
           const SizedBox(height: 10),
           ..._users.map((u) => _userRow(u)),
-          if (_users.isEmpty) _emptyLine('هیچ یوزەرێک نییە'),
+          if (_users.isEmpty) _emptyLine('No users'),
           const SizedBox(height: 12),
           _card(Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               TextField(
                 controller: _userEmailCtrl,
-                decoration: const InputDecoration(hintText: 'ئیمەیل'),
+                decoration: const InputDecoration(hintText: 'Email'),
                 textDirection: TextDirection.ltr,
               ),
               const SizedBox(height: 10),
               TextField(
                 controller: _userPassCtrl,
-                decoration: const InputDecoration(hintText: 'وشەی نهێنی سەرەتایی'),
+                decoration: const InputDecoration(hintText: 'Initial password'),
                 textDirection: TextDirection.ltr,
               ),
               const SizedBox(height: 10),
               DropdownButtonFormField<String>(
                 value: _userRole,
                 items: const [
-                  DropdownMenuItem(value: 'employee', child: Text('کارمەند')),
-                  DropdownMenuItem(value: 'manager', child: Text('مودیر')),
-                  DropdownMenuItem(value: 'admin', child: Text('بەڕێوەبەر')),
+                  DropdownMenuItem(value: 'employee', child: Text('Employee')),
+                  DropdownMenuItem(value: 'manager', child: Text('Manager')),
+                  DropdownMenuItem(value: 'admin', child: Text('Admin')),
                 ],
                 onChanged: (v) => setState(() => _userRole = v ?? 'employee'),
               ),
@@ -144,7 +144,7 @@ class _AdminScreenState extends State<AdminScreen> {
                 ),
               ],
               const SizedBox(height: 12),
-              ElevatedButton(onPressed: _addUser, child: const Text('زیادکردنی یوزەر')),
+              ElevatedButton(onPressed: _addUser, child: const Text('Add user')),
             ],
           )),
         ],
@@ -170,9 +170,9 @@ class _AdminScreenState extends State<AdminScreen> {
       );
 
   String _roleLabel(String role) {
-    if (role == 'admin') return 'بەڕێوەبەر';
-    if (role == 'manager') return 'مودیر';
-    return 'کارمەند';
+    if (role == 'admin') return 'Admin';
+    if (role == 'manager') return 'Manager';
+    return 'Employee';
   }
 
   Widget _userRow(AppUser u) {
@@ -191,21 +191,21 @@ class _AdminScreenState extends State<AdminScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(u.email, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
-                Text('${_roleLabel(u.role)} · ${u.branchName ?? "بێ لق"}',
+                Text('${_roleLabel(u.role)} · ${u.branchName ?? "No branch"}',
                     style: const TextStyle(fontSize: 12, color: RxColors.inkSoft)),
               ],
             ),
           ),
           TextButton(
             onPressed: () => _showResetPasswordDialog(u),
-            child: const Text('دووبارە دانان', style: TextStyle(color: RxColors.amberDeep, fontSize: 12.5)),
+            child: const Text('Reset', style: TextStyle(color: RxColors.amberDeep, fontSize: 12.5)),
           ),
           TextButton(
             onPressed: () async {
               await _api.deleteUser(u.id);
               _load();
             },
-            child: const Text('سڕینەوە', style: TextStyle(color: RxColors.stamp, fontSize: 12.5)),
+            child: const Text('Delete', style: TextStyle(color: RxColors.danger, fontSize: 12.5)),
           ),
         ],
       ),
@@ -218,17 +218,17 @@ class _AdminScreenState extends State<AdminScreen> {
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: RxColors.paper,
-        title: Text('دووبارە دانانی وشەی نهێنی', style: TextStyle(fontSize: 15)),
+        title: Text('Reset password', style: TextStyle(fontSize: 15)),
         content: TextField(
           controller: ctrl,
           textDirection: TextDirection.ltr,
-          decoration: const InputDecoration(hintText: 'وشەی نهێنی نوێ'),
+          decoration: const InputDecoration(hintText: 'New password'),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('هەڵوەشاندنەوە')),
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
           ElevatedButton(
             onPressed: () => Navigator.pop(context, ctrl.text),
-            child: const Text('دانان'),
+            child: const Text('Set'),
           ),
         ],
       ),
@@ -237,11 +237,11 @@ class _AdminScreenState extends State<AdminScreen> {
     try {
       await _api.resetUserPassword(u.id, newPassword.trim());
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('وشەی نهێنی نوێ کرایەوە')));
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Password reset')));
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('نەتوانرا بگۆڕدرێت')));
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Couldn't be changed')));
       }
     }
   }
@@ -269,7 +269,7 @@ class _AdminScreenState extends State<AdminScreen> {
           ),
           TextButton(
             onPressed: onDelete,
-            child: const Text('سڕینەوە', style: TextStyle(color: RxColors.stamp, fontSize: 12.5)),
+            child: const Text('Delete', style: TextStyle(color: RxColors.danger, fontSize: 12.5)),
           ),
         ],
       ),

@@ -184,8 +184,8 @@ app.get('/api/prescriptions', requireAuth, async (req, res) => {
   res.json(rows.map(formatPrescription));
 });
 
-const ALLOWED_CATEGORIES = ['دەرمان', 'میلک', 'بیوتی', 'تەجهیزات'];
-const ALLOWED_SOURCES = ['حکومی', 'تایبەت'];
+const ALLOWED_CATEGORIES = ['Medicine', 'Dairy', 'Beauty', 'Equipment'];
+const ALLOWED_SOURCES = ['Government', 'Private'];
 
 app.post('/api/prescriptions', requireAuth, async (req, res) => {
   if (!req.user.branchId) return res.status(400).json({ error: 'no_branch_assigned' });
@@ -206,8 +206,8 @@ app.post('/api/prescriptions', requireAuth, async (req, res) => {
       doctorName: doctorName || '',
       phone: phone || '',
       medicines: JSON.stringify(medicineList),
-      category: ALLOWED_CATEGORIES.includes(category) ? category : 'دەرمان',
-      source: ALLOWED_SOURCES.includes(source) ? source : 'تایبەت',
+      category: ALLOWED_CATEGORIES.includes(category) ? category : 'Medicine',
+      source: ALLOWED_SOURCES.includes(source) ? source : 'Private',
       branchId: req.user.branchId,
       userId: req.user.id,
       images: imageCreates.length ? { create: imageCreates } : undefined,
@@ -318,19 +318,19 @@ app.get('/api/reports/overview', requireAuth, requireAdmin, async (req, res) => 
   const byYear = {};
 
   for (const p of prescriptions) {
-    const branchName = branchNameById[p.branchId] || 'نەزانراو';
+    const branchName = branchNameById[p.branchId] || 'Unknown';
     byBranch[branchName] = (byBranch[branchName] || 0) + 1;
 
-    const empEmail = userEmailById[p.userId] || 'نەزانراو';
+    const empEmail = userEmailById[p.userId] || 'Unknown';
     byEmployee[empEmail] = (byEmployee[empEmail] || 0) + 1;
 
-    const doctorKey = (p.doctorName || '').trim() || 'بێ ناوی دکتۆر';
+    const doctorKey = (p.doctorName || '').trim() || 'No doctor name';
     byDoctor[doctorKey] = (byDoctor[doctorKey] || 0) + 1;
 
-    const categoryKey = p.category || 'دەرمان';
+    const categoryKey = p.category || 'Medicine';
     byCategory[categoryKey] = (byCategory[categoryKey] || 0) + 1;
 
-    const sourceKey = p.source || 'تایبەت';
+    const sourceKey = p.source || 'Private';
     bySource[sourceKey] = (bySource[sourceKey] || 0) + 1;
 
     let meds = [];
@@ -384,7 +384,7 @@ app.get('/api/reports/doctor', requireAuth, requireAdmin, async (req, res) => {
 
   const [prescriptions, branches, users] = await Promise.all([
     prisma.prescription.findMany({
-      where: { doctorName: name === 'بێ ناوی دکتۆر' ? '' : name },
+      where: { doctorName: name === 'No doctor name' ? '' : name },
       orderBy: { createdAt: 'desc' },
     }),
     prisma.branch.findMany(),

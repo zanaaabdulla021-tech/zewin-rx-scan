@@ -7,7 +7,7 @@ async function main() {
   const branch = await prisma.branch.upsert({
     where: { id: 1 },
     update: {},
-    create: { name: 'لقی سەرەکی' },
+    create: { name: 'Main Branch' },
   });
 
   const passwordHash = await bcrypt.hash('admin123', 10);
@@ -22,7 +22,7 @@ async function main() {
     },
   });
 
-  console.log('Seeded branch "لقی سەرەکی" and admin login:');
+  console.log('Seeded branch "Main Branch" and admin login:');
   console.log('  email:    admin@zewin.local');
   console.log('  password: admin123');
   console.log('Log in and change this password / create real accounts right away.');

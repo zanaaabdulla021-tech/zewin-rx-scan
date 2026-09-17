@@ -24,9 +24,9 @@ class _AccountScreenState extends State<AccountScreen> {
   bool _success = false;
 
   String _roleLabel(String role) {
-    if (role == 'admin') return 'بەڕێوەبەر';
-    if (role == 'manager') return 'مودیر';
-    return 'کارمەند';
+    if (role == 'admin') return 'Admin';
+    if (role == 'manager') return 'Manager';
+    return 'Employee';
   }
 
   Future<void> _pickAvatar() async {
@@ -48,7 +48,7 @@ class _AccountScreenState extends State<AccountScreen> {
       if (mounted) setState(() {});
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('نەتوانرا وێنەکە باربکرێت')));
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Couldn't load the photo')));
       }
     } finally {
       if (mounted) setState(() => _uploadingAvatar = false);
@@ -61,7 +61,7 @@ class _AccountScreenState extends State<AccountScreen> {
     if (cur.isEmpty || next.isEmpty) {
       setState(() {
         _success = false;
-        _message = 'هەردوو خانەکە پڕ بکەوە';
+        _message = 'Fill in both fields';
       });
       return;
     }
@@ -75,12 +75,12 @@ class _AccountScreenState extends State<AccountScreen> {
       _newCtrl.clear();
       setState(() {
         _success = true;
-        _message = 'وشەی نهێنی گۆڕدرا';
+        _message = 'Password changed';
       });
     } catch (e) {
       setState(() {
         _success = false;
-        _message = 'وشەی نهێنی ئێستا هەڵەیە یان نوێیەکە زۆر کورتە';
+        _message = 'Current password is wrong, or the new one is too short';
       });
     } finally {
       if (mounted) setState(() => _saving = false);
@@ -93,7 +93,7 @@ class _AccountScreenState extends State<AccountScreen> {
     return ListView(
       padding: const EdgeInsets.all(18),
       children: [
-        const Text('وێنەی هەژمار', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: RxColors.inkSoft)),
+        const Text('Profile photo', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: RxColors.inkSoft)),
         const SizedBox(height: 10),
         Row(
           children: [
@@ -118,19 +118,19 @@ class _AccountScreenState extends State<AccountScreen> {
             const SizedBox(width: 14),
             _uploadingAvatar
                 ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: RxColors.amberDeep))
-                : TextButton(onPressed: _pickAvatar, child: const Text('گۆڕینی وێنە')),
+                : TextButton(onPressed: _pickAvatar, child: const Text('Change photo')),
           ],
         ),
         const SizedBox(height: 26),
-        const Text('زانیاری هەژمار', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: RxColors.inkSoft)),
+        const Text('Account details', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: RxColors.inkSoft)),
         const SizedBox(height: 10),
         if (user != null) ...[
-          _infoRow('ئیمەیل', user.email),
-          _infoRow('ڕۆڵ', _roleLabel(user.role)),
-          _infoRow('لق', user.branchName ?? 'بێ لق'),
+          _infoRow('Email', user.email),
+          _infoRow('Role', _roleLabel(user.role)),
+          _infoRow('Branch', user.branchName ?? 'No branch'),
         ],
         const SizedBox(height: 26),
-        const Text('گۆڕینی وشەی نهێنی', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: RxColors.inkSoft)),
+        const Text('Change password', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: RxColors.inkSoft)),
         const SizedBox(height: 10),
         Container(
           padding: const EdgeInsets.all(16),
@@ -146,14 +146,14 @@ class _AccountScreenState extends State<AccountScreen> {
                 controller: _curCtrl,
                 obscureText: true,
                 textDirection: TextDirection.ltr,
-                decoration: const InputDecoration(labelText: 'وشەی نهێنی ئێستا'),
+                decoration: const InputDecoration(labelText: 'Current password'),
               ),
               const SizedBox(height: 12),
               TextField(
                 controller: _newCtrl,
                 obscureText: true,
                 textDirection: TextDirection.ltr,
-                decoration: const InputDecoration(labelText: 'وشەی نهێنی نوێ'),
+                decoration: const InputDecoration(labelText: 'New password'),
               ),
               const SizedBox(height: 14),
               ElevatedButton(
@@ -162,7 +162,7 @@ class _AccountScreenState extends State<AccountScreen> {
                     ? const SizedBox(
                         width: 16, height: 16,
                         child: CircularProgressIndicator(strokeWidth: 2, color: RxColors.paper))
-                    : const Text('گۆڕین'),
+                    : const Text('Change'),
               ),
               if (_message != null) ...[
                 const SizedBox(height: 10),
@@ -170,7 +170,7 @@ class _AccountScreenState extends State<AccountScreen> {
                   _message!,
                   style: TextStyle(
                     fontSize: 13,
-                    color: _success ? const Color(0xFF3E5A2C) : RxColors.stampDeep,
+                    color: _success ? RxColors.stampDeep : RxColors.dangerDeep,
                   ),
                 ),
               ],

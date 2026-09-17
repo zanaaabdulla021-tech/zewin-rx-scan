@@ -31,12 +31,12 @@ class _FormScreenState extends State<FormScreen> {
   late List<TextEditingController> _medCtrls;
   final Map<int, String?> _itemPreviews = {};
   final Map<int, Timer> _debouncers = {};
-  String _category = 'دەرمان';
-  String _source = 'تایبەت';
+  String _category = 'Medicine';
+  String _source = 'Private';
   bool _saving = false;
 
-  static const categories = ['دەرمان', 'میلک', 'بیوتی', 'تەجهیزات'];
-  static const sources = ['تایبەت', 'حکومی'];
+  static const categories = ['Medicine', 'Dairy', 'Beauty', 'Equipment'];
+  static const sources = ['Private', 'Government'];
 
   @override
   void initState() {
@@ -101,7 +101,7 @@ class _FormScreenState extends State<FormScreen> {
 
     if (doctorName.isEmpty && phone.isEmpty && medicines.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('تکایە هیچ نەبێت یەک خانە پڕ بکەوە پێش خەزنکردن')),
+        const SnackBar(content: Text('Please fill in at least one field before saving')),
       );
       return;
     }
@@ -131,13 +131,13 @@ class _FormScreenState extends State<FormScreen> {
       );
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('خەزن کرا')),
+        const SnackBar(content: Text('Saved')),
       );
       Navigator.of(context).pop();
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('نەتوانرا خەزن بکرێت. دووبارە هەوڵ بدەوە.')),
+        const SnackBar(content: Text('Couldn't be saved. Please try again.')),
       );
     } finally {
       if (mounted) setState(() => _saving = false);
@@ -147,7 +147,7 @@ class _FormScreenState extends State<FormScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('پشتڕاستکردنەوە و خەزنکردن')),
+      appBar: AppBar(title: const Text('Review & Save')),
       backgroundColor: RxColors.paper,
       body: ListView(
         padding: const EdgeInsets.fromLTRB(18, 18, 18, 30),
@@ -165,14 +165,14 @@ class _FormScreenState extends State<FormScreen> {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    const Text('جۆر', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: RxColors.inkSoft)),
+                    const Text('Category', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: RxColors.inkSoft)),
                     const SizedBox(height: 6),
                     DropdownButtonFormField<String>(
                       initialValue: _category,
                       items: categories
                           .map((c) => DropdownMenuItem(value: c, child: Text(c)))
                           .toList(),
-                      onChanged: (v) => setState(() => _category = v ?? 'دەرمان'),
+                      onChanged: (v) => setState(() => _category = v ?? 'Medicine'),
                     ),
                   ],
                 ),
@@ -180,24 +180,24 @@ class _FormScreenState extends State<FormScreen> {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    const Text('سەرچاوە', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: RxColors.inkSoft)),
+                    const Text('Source', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: RxColors.inkSoft)),
                     const SizedBox(height: 6),
                     DropdownButtonFormField<String>(
                       initialValue: _source,
                       items: sources
                           .map((c) => DropdownMenuItem(value: c, child: Text(c)))
                           .toList(),
-                      onChanged: (v) => setState(() => _source = v ?? 'تایبەت'),
+                      onChanged: (v) => setState(() => _source = v ?? 'Private'),
                     ),
                   ],
                 ),
                 const SizedBox(height: 14),
-                _field('ناوی دکتۆر', _doctorCtrl, hint: 'بۆ نموونە: د. ئاراس محەمەد'),
+                _field('Doctor's name', _doctorCtrl, hint: 'e.g. Dr. Aras Mohammed'),
                 const SizedBox(height: 14),
-                _field('ژمارەی مۆبایل', _phoneCtrl,
-                    hint: '٠٧٥٠ ٠٠٠ ٠٠٠٠', keyboardType: TextInputType.phone),
+                _field('Phone number', _phoneCtrl,
+                    hint: '0750 000 0000', keyboardType: TextInputType.phone),
                 const SizedBox(height: 14),
-                const Text('دەرمانەکان',
+                const Text('Items',
                     style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: RxColors.inkSoft)),
                 const SizedBox(height: 8),
                 ..._medCtrls.asMap().entries.map((entry) {
@@ -215,7 +215,7 @@ class _FormScreenState extends State<FormScreen> {
                               child: TextField(
                                 controller: ctrl,
                                 onChanged: (v) => _onMedChanged(i, v),
-                                decoration: const InputDecoration(hintText: 'ناوی دەرمان'),
+                                decoration: const InputDecoration(hintText: 'Item name'),
                               ),
                             ),
                             const SizedBox(width: 8),
@@ -230,7 +230,7 @@ class _FormScreenState extends State<FormScreen> {
                                   borderRadius: BorderRadius.circular(8),
                                   border: Border.all(color: RxColors.line),
                                 ),
-                                child: const Icon(Icons.close, size: 16, color: RxColors.stampDeep),
+                                child: const Icon(Icons.close, size: 16, color: RxColors.dangerDeep),
                               ),
                             ),
                           ],
@@ -248,7 +248,7 @@ class _FormScreenState extends State<FormScreen> {
                                   ),
                                 ),
                                 const SizedBox(width: 6),
-                                const Text('وێنەی پێشووی ئەم ئایتمە',
+                                const Text('This item's previous photo',
                                     style: TextStyle(fontSize: 11.5, color: RxColors.inkSoft)),
                               ],
                             ),
@@ -262,7 +262,7 @@ class _FormScreenState extends State<FormScreen> {
                   child: TextButton.icon(
                     onPressed: _addMedRow,
                     icon: const Icon(Icons.add, size: 16, color: RxColors.amberDeep),
-                    label: const Text('زیادکردنی دەرمان',
+                    label: const Text('+ Add item',
                         style: TextStyle(color: RxColors.amberDeep, fontSize: 13.5)),
                   ),
                 ),
@@ -279,7 +279,7 @@ class _FormScreenState extends State<FormScreen> {
                       width: 16, height: 16,
                       child: CircularProgressIndicator(strokeWidth: 2, color: RxColors.amberTint))
                   : const Icon(Icons.check, size: 18),
-              label: const Text('خەزنکردنی ڕەسیت'),
+              label: const Text('Save order'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: RxColors.stamp,
                 foregroundColor: RxColors.amberTint,

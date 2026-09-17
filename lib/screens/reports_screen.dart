@@ -66,7 +66,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
     final data = _overview;
     if (data == null) {
       return const Center(
-        child: Text('نەتوانرا ڕاپۆرت باربکرێت', style: TextStyle(color: RxColors.inkSoft)),
+        child: Text('Couldn't load the report', style: TextStyle(color: RxColors.inkSoft)),
       );
     }
 
@@ -85,35 +85,35 @@ class _ReportsScreenState extends State<ReportsScreen> {
       child: ListView(
         padding: const EdgeInsets.all(18),
         children: [
-          _sectionTitle('کۆی گشتی'),
-          _row('کۆی گشتی ڕەسیتەکان', '${data['total']}'),
+          _sectionTitle('Total'),
+          _row('Total orders', '${data['total']}'),
           const SizedBox(height: 22),
-          _sectionTitle('بەپێی لق'),
+          _sectionTitle('By branch'),
           ...byBranch.map((r) => _row(r['name'] as String, '${r['count']}')),
           const SizedBox(height: 22),
-          _sectionTitle('بەپێی کارمەند'),
+          _sectionTitle('By employee'),
           ...byEmployee.map((r) => _row(r['name'] as String, '${r['count']}')),
           const SizedBox(height: 22),
-          _sectionTitle('بەپێی جۆر'),
+          _sectionTitle('By category'),
           ...byCategory.map((r) => _row(r['name'] as String, '${r['count']}')),
           const SizedBox(height: 22),
-          _sectionTitle('بەپێی سەرچاوە (حکومی/تایبەت)'),
+          _sectionTitle('By source (government/private)'),
           ...(data['bySource'] as List? ?? []).map((r) => _row(r['name'] as String, '${r['count']}')),
           const SizedBox(height: 22),
-          _sectionTitle('بەپێی ساڵ'),
+          _sectionTitle('By year'),
           ...(data['byYear'] as List? ?? []).map((r) => _row(r['name'] as String, '${r['count']}')),
           const SizedBox(height: 22),
-          _sectionTitle('بەپێی مانگ'),
+          _sectionTitle('By month'),
           ...(data['byMonth'] as List? ?? []).map((r) => _row(r['name'] as String, '${r['count']}')),
           const SizedBox(height: 22),
-          _sectionTitle('بەپێی ڕۆژ (٣٠ ڕۆژی کۆتایی)'),
+          _sectionTitle('By day (last 30 days)'),
           ...((data['byDay'] as List? ?? []).take(30)).map((r) => _row(r['name'] as String, '${r['count']}')),
           const SizedBox(height: 22),
-          _sectionTitle('بەپێی دکتۆر (کرتە بکە بۆ وردەکاری)'),
+          _sectionTitle('By doctor (tap for details)'),
           TextField(
             controller: _doctorSearchCtrl,
             onChanged: (v) => setState(() => _doctorSearchTerm = v),
-            decoration: const InputDecoration(hintText: 'گەڕان بۆ ناوی دکتۆر...'),
+            decoration: const InputDecoration(hintText: 'Search by doctor name...'),
           ),
           const SizedBox(height: 8),
           ...byDoctor.map((r) => _row(
@@ -122,11 +122,11 @@ class _ReportsScreenState extends State<ReportsScreen> {
                 onTap: () => _openDoctor(r['name'] as String),
               )),
           const SizedBox(height: 22),
-          _sectionTitle('دەرمانە زۆر بەکارهاتووەکان'),
+          _sectionTitle('Most used items'),
           ...topMedicines.map((r) => _row(r['name'] as String, '${r['count']}')),
           if (_selectedDoctor != null) ...[
             const SizedBox(height: 26),
-            _sectionTitle('وردەکاری: $_selectedDoctor'),
+            _sectionTitle('Details: $_selectedDoctor'),
             if (_loadingDoctor)
               const Padding(
                 padding: EdgeInsets.symmetric(vertical: 14),
@@ -143,11 +143,11 @@ class _ReportsScreenState extends State<ReportsScreen> {
   List<Widget> _buildDoctorDetail() {
     final detail = _doctorDetail;
     if (detail == null) {
-      return [const Text('نەتوانرا باربکرێت', style: TextStyle(color: RxColors.inkSoft, fontSize: 13))];
+      return [const Text('Couldn't be loaded', style: TextStyle(color: RxColors.inkSoft, fontSize: 13))];
     }
     final rows = (detail['prescriptions'] as List? ?? []);
     if (rows.isEmpty) {
-      return [const Text('هیچ ڕەسیتێک نییە', style: TextStyle(color: RxColors.inkSoft, fontSize: 13))];
+      return [const Text('No orders', style: TextStyle(color: RxColors.inkSoft, fontSize: 13))];
     }
     return rows.map<Widget>((p) {
       final meds = (p['medicines'] as List? ?? []).cast<String>();
@@ -165,12 +165,12 @@ class _ReportsScreenState extends State<ReportsScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              '${p['branchName'] ?? "—"} · ${p['employeeEmail'] ?? "—"} · ${p['category'] ?? "دەرمان"} · ${p['source'] ?? "تایبەت"} · $dateStr',
+              '${p['branchName'] ?? "—"} · ${p['employeeEmail'] ?? "—"} · ${p['category'] ?? "Medicine"} · ${p['source'] ?? "Private"} · $dateStr',
               style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 3),
             Text(
-              meds.isNotEmpty ? meds.join('، ') : 'دەرمانێک تۆمار نەکراوە',
+              meds.isNotEmpty ? meds.join(', ') : 'No items recorded',
               style: const TextStyle(fontSize: 12.5, color: RxColors.inkSoft),
             ),
           ],

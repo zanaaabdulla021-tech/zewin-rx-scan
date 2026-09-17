@@ -96,7 +96,7 @@ class HistoryScreenState extends State<HistoryScreen> {
             controller: _searchCtrl,
             onChanged: (v) => setState(() => _searchTerm = v),
             decoration: const InputDecoration(
-              hintText: 'گەڕان بە ناوی دکتۆر، دەرمان، لق، کارمەند...',
+              hintText: 'Search by doctor, item, branch, employee...',
               prefixIcon: Icon(Icons.search, size: 20),
             ),
           ),
@@ -112,7 +112,7 @@ class HistoryScreenState extends State<HistoryScreen> {
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(
-                      _items.isEmpty ? 'هێشتا هیچ ڕەسیتێک خەزن نەکراوە' : 'هیچ ئەنجامێک نەدۆزرایەوە',
+                      _items.isEmpty ? 'No orders saved yet' : 'No results found',
                       textAlign: TextAlign.center,
                       style: const TextStyle(fontSize: 13.5, color: RxColors.inkSoft),
                     ),
@@ -157,7 +157,7 @@ class HistoryScreenState extends State<HistoryScreen> {
             }
           },
           icon: const Icon(Icons.image_outlined, size: 16, color: RxColors.amberDeep),
-          label: Text(open ? 'شاردنەوەی وێنە' : 'بینینی وێنە (${p.imageCount})',
+          label: Text(open ? 'Hide photo' : 'View photo (${p.imageCount})',
               style: const TextStyle(color: RxColors.amberDeep, fontSize: 12.5)),
         ),
         if (open) _buildImageContent(p.id),
@@ -174,7 +174,7 @@ class HistoryScreenState extends State<HistoryScreen> {
     }
     final dataUris = _loadedImages[id];
     if (dataUris == null || dataUris.isEmpty) {
-      return const Text('نەتوانرا وێنەکە باربکرێت', style: TextStyle(fontSize: 12.5, color: RxColors.inkSoft));
+      return const Text('Couldn't load the photo', style: TextStyle(fontSize: 12.5, color: RxColors.inkSoft));
     }
     return GridView.builder(
       shrinkWrap: true,
@@ -204,17 +204,17 @@ class HistoryScreenState extends State<HistoryScreen> {
       case 'approved':
         bg = const Color(0x265A7A44);
         fg = const Color(0xFF3E5A2C);
-        label = 'ئەپرۆڤکراو';
+        label = 'Approved';
         break;
       case 'rejected':
-        bg = RxColors.stamp.withValues(alpha: 0.12);
-        fg = RxColors.stampDeep;
-        label = 'ڕەتکراوەتەوە';
+        bg = RxColors.danger.withValues(alpha: 0.12);
+        fg = RxColors.dangerDeep;
+        label = 'Rejected';
         break;
       default:
-        bg = RxColors.amber.withValues(alpha: 0.15);
-        fg = RxColors.amberDeep;
-        label = 'چاوەڕوان';
+        bg = RxColors.pending.withValues(alpha: 0.15);
+        fg = RxColors.pendingDeep;
+        label = 'Pending';
     }
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
@@ -249,14 +249,14 @@ class HistoryScreenState extends State<HistoryScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          '${p.doctorName.isEmpty ? "بێ ناوی دکتۆر" : p.doctorName} · ${p.category} · ${p.source}',
+                          '${p.doctorName.isEmpty ? "No doctor name" : p.doctorName} · ${p.category} · ${p.source}',
                           style: const TextStyle(fontSize: 14.5, fontWeight: FontWeight.w600, color: RxColors.ink),
                           overflow: TextOverflow.ellipsis,
                         ),
                         const SizedBox(height: 3),
                         Text(
                           [
-                            '$dateStr · ${p.medicines.length} دەرمان',
+                            '$dateStr · ${p.medicines.length} Medicine',
                             if (p.branchName != null) p.branchName!,
                             if (p.employeeEmail != null) p.employeeEmail!,
                           ].join(' · '),
@@ -283,7 +283,7 @@ class HistoryScreenState extends State<HistoryScreen> {
                   const Divider(color: RxColors.line, height: 1),
                   const SizedBox(height: 10),
                   if (p.medicines.isEmpty)
-                    const Text('دەرمانێک تۆمار نەکراوە',
+                    const Text('No items recorded',
                         style: TextStyle(fontSize: 13, color: RxColors.inkSoft))
                   else
                     ...p.medicines.map((m) => Padding(
@@ -292,7 +292,7 @@ class HistoryScreenState extends State<HistoryScreen> {
                         )),
                   if (p.phone.isNotEmpty) ...[
                     const SizedBox(height: 6),
-                    Text('ژمارە: ${p.phone}', style: const TextStyle(fontSize: 13, color: RxColors.inkSoft)),
+                    Text('Number: ${p.phone}', style: const TextStyle(fontSize: 13, color: RxColors.inkSoft)),
                   ],
                   if (p.imageCount > 0) ...[
                     const SizedBox(height: 8),
@@ -307,12 +307,12 @@ class HistoryScreenState extends State<HistoryScreen> {
                             TextButton.icon(
                               onPressed: () => _approve(p),
                               icon: const Icon(Icons.check, size: 15, color: Color(0xFF3E5A2C)),
-                              label: const Text('ئەپرۆڤ', style: TextStyle(color: Color(0xFF3E5A2C), fontSize: 12.5)),
+                              label: const Text('Approve', style: TextStyle(color: Color(0xFF3E5A2C), fontSize: 12.5)),
                             ),
                             TextButton.icon(
                               onPressed: () => _reject(p),
-                              icon: const Icon(Icons.close, size: 15, color: RxColors.stamp),
-                              label: const Text('ڕەتکردنەوە', style: TextStyle(color: RxColors.stamp, fontSize: 12.5)),
+                              icon: const Icon(Icons.close, size: 15, color: RxColors.danger),
+                              label: const Text('Reject', style: TextStyle(color: RxColors.danger, fontSize: 12.5)),
                             ),
                           ],
                         )
@@ -320,8 +320,8 @@ class HistoryScreenState extends State<HistoryScreen> {
                         const SizedBox.shrink(),
                       TextButton.icon(
                         onPressed: () => _delete(p),
-                        icon: const Icon(Icons.delete_outline, size: 15, color: RxColors.stamp),
-                        label: const Text('سڕینەوە', style: TextStyle(color: RxColors.stamp, fontSize: 12.5)),
+                        icon: const Icon(Icons.delete_outline, size: 15, color: RxColors.danger),
+                        label: const Text('Delete', style: TextStyle(color: RxColors.danger, fontSize: 12.5)),
                       ),
                     ],
                   ),

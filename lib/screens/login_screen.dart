@@ -1,6 +1,9 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import '../logo.dart';
 import '../services/auth_service.dart';
 import '../theme.dart';
 
@@ -27,7 +30,7 @@ class _LoginScreenState extends State<LoginScreen> {
       await AuthService.instance.login(_emailCtrl.text.trim(), _passCtrl.text);
       widget.onLoggedIn();
     } catch (e) {
-      setState(() => _error = 'ئیمەیل یان وشەی نهێنی هەڵەیە');
+      setState(() => _error = 'Incorrect email or password');
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -50,10 +53,22 @@ class _LoginScreenState extends State<LoginScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                Center(
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(15),
+                    child: Image.memory(
+                      base64Decode(kLogoBase64),
+                      width: 56,
+                      height: 56,
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 14),
                 Text(
-                  'خوێندنەوەی ڕەسیت',
+                  'Rx Scan',
                   textAlign: TextAlign.center,
-                  style: GoogleFonts.notoNaskhArabic(
+                  style: GoogleFonts.playfairDisplay(
                     fontWeight: FontWeight.w700,
                     fontSize: 20,
                     color: RxColors.ink,
@@ -61,21 +76,21 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 4),
                 const Text(
-                  'چوونەژوورەوە بە ئیمەیل و وشەی نهێنی',
+                  'Log in with your email and password',
                   textAlign: TextAlign.center,
                   style: TextStyle(fontSize: 13, color: RxColors.inkSoft),
                 ),
                 const SizedBox(height: 22),
                 TextField(
                   controller: _emailCtrl,
-                  decoration: const InputDecoration(labelText: 'ئیمەیل'),
+                  decoration: const InputDecoration(labelText: 'Email'),
                   textDirection: TextDirection.ltr,
                   keyboardType: TextInputType.emailAddress,
                 ),
                 const SizedBox(height: 12),
                 TextField(
                   controller: _passCtrl,
-                  decoration: const InputDecoration(labelText: 'وشەی نهێنی'),
+                  decoration: const InputDecoration(labelText: 'Password'),
                   textDirection: TextDirection.ltr,
                   obscureText: true,
                   onSubmitted: (_) => _submit(),
@@ -89,18 +104,18 @@ class _LoginScreenState extends State<LoginScreen> {
                           height: 16,
                           child: CircularProgressIndicator(strokeWidth: 2, color: RxColors.paper),
                         )
-                      : const Text('چوونەژوورەوە'),
+                      : const Text('Log in'),
                 ),
                 if (_error != null) ...[
                   const SizedBox(height: 14),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 9),
                     decoration: BoxDecoration(
-                      color: RxColors.stamp.withValues(alpha: 0.08),
-                      border: Border.all(color: RxColors.stamp.withValues(alpha: 0.25)),
+                      color: RxColors.danger.withValues(alpha: 0.08),
+                      border: Border.all(color: RxColors.danger.withValues(alpha: 0.25)),
                       borderRadius: BorderRadius.circular(9),
                     ),
-                    child: Text(_error!, style: const TextStyle(color: RxColors.stampDeep, fontSize: 13)),
+                    child: Text(_error!, style: const TextStyle(color: RxColors.dangerDeep, fontSize: 13)),
                   ),
                 ],
               ],

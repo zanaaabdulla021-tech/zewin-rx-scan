@@ -81,7 +81,7 @@ class _ScanScreenState extends State<ScanScreen> {
       } on CloudOcrException catch (ce) {
         if (ce.reason != 'backend_not_configured') {
           setState(() {
-            _notice = 'پەیوەندی بە سێرڤەری هوشی دەستکرد نەکرا — هەوڵ بە خوێندنەوەی ناوخۆیی (تەنها لاتین) دەدرێتەوە.';
+            _notice = 'Couldn't reach the AI server — trying on-device reading (Latin script only).';
           });
         }
       }
@@ -91,7 +91,7 @@ class _ScanScreenState extends State<ScanScreen> {
       await _goToForm('', local.phone ?? '', local.lines);
     } catch (e) {
       setState(() {
-        _notice = 'هەڵەیەک ڕوویدا لە خوێندنەوەکە. تکایە دووبارە هەوڵ بدەوە یان بە دەست بنووسە.';
+        _notice = 'Something went wrong while reading. Please try again or enter it manually.';
       });
     } finally {
       if (mounted) setState(() => _reading = false);
@@ -119,7 +119,7 @@ class _ScanScreenState extends State<ScanScreen> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           const Text(
-            'وێنەی ڕەسیت (دەتوانیت چەند وێنەیەک زیاد بکەیت)',
+            'Prescription photo (you can add more than one)',
             style: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w600,
@@ -136,7 +136,7 @@ class _ScanScreenState extends State<ScanScreen> {
           TextButton(
             onPressed: _manualEntry,
             child: const Text(
-              'یان بە دەست زانیارییەکان بنووسە',
+              'Or enter the details manually',
               style: TextStyle(color: RxColors.inkSoft, fontSize: 13),
             ),
           ),
@@ -162,7 +162,7 @@ class _ScanScreenState extends State<ScanScreen> {
           ),
           const SizedBox(height: 14),
           const Text(
-            'وێنەیەک بگرە یان هەڵیبژێرە بۆ دەستپێکردن',
+            'Take or choose a photo to get started',
             textAlign: TextAlign.center,
             style: TextStyle(fontSize: 13.5, color: RxColors.inkSoft, height: 1.5),
           ),
@@ -172,7 +172,7 @@ class _ScanScreenState extends State<ScanScreen> {
             children: [
               ElevatedButton(
                 onPressed: () => _pick(ImageSource.camera),
-                child: const Text('وێنەگرتن'),
+                child: const Text('Take photo'),
               ),
               const SizedBox(width: 10),
               OutlinedButton(
@@ -183,7 +183,7 @@ class _ScanScreenState extends State<ScanScreen> {
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(999)),
                 ),
-                child: const Text('هەڵبژاردنی فایل'),
+                child: const Text('Choose file'),
               ),
             ],
           ),
@@ -242,7 +242,7 @@ class _ScanScreenState extends State<ScanScreen> {
                 side: const BorderSide(color: RxColors.line),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
               ),
-              child: const Text('+ زیادکردنی وێنەیەکی تر'),
+              child: const Text('+ + Add another photo'),
             ),
           ],
         ),
@@ -258,7 +258,7 @@ class _ScanScreenState extends State<ScanScreen> {
                       height: 16,
                       child: CircularProgressIndicator(strokeWidth: 2, color: RxColors.paper),
                     )
-                  : const Text('بخوێنەوە بە AI'),
+                  : const Text('Read with AI'),
             ),
             const SizedBox(width: 10),
             OutlinedButton(
@@ -268,7 +268,7 @@ class _ScanScreenState extends State<ScanScreen> {
                 side: const BorderSide(color: RxColors.line),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
               ),
-              child: const Text('دەستپێکردنەوە'),
+              child: const Text('Start over'),
             ),
           ],
         ),
@@ -280,13 +280,13 @@ class _ScanScreenState extends State<ScanScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
-        color: RxColors.stamp.withValues(alpha: 0.08),
-        border: Border.all(color: RxColors.stamp.withValues(alpha: 0.25)),
+        color: RxColors.danger.withValues(alpha: 0.08),
+        border: Border.all(color: RxColors.danger.withValues(alpha: 0.25)),
         borderRadius: BorderRadius.circular(10),
       ),
       child: Text(
         text,
-        style: const TextStyle(fontSize: 13, color: RxColors.stampDeep, height: 1.5),
+        style: const TextStyle(fontSize: 13, color: RxColors.dangerDeep, height: 1.5),
       ),
     );
   }
