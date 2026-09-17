@@ -1,0 +1,898 @@
+<!DOCTYPE html>
+<html lang="ckb" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>خوێندنەوەی ڕەسیت</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700&family=Noto+Naskh+Arabic:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#14231A; --bg-2:#1B2E21;
+    --paper:#E9E2CB; --paper-2:#DCD2B2;
+    --ink:#221E14; --ink-soft:#5B5640;
+    --amber:#B36A2C; --amber-deep:#8A4E1E; --amber-tint:#F0DCC0;
+    --stamp:#93362A; --stamp-deep:#722A20;
+    --line:rgba(34,30,20,0.16);
+    --shadow:0 18px 40px -20px rgba(20,35,26,0.55);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{background:var(--bg);color:var(--ink);font-family:'Vazirmatn','Noto Naskh Arabic',sans-serif;min-height:100vh;display:flex;flex-direction:column;align-items:center;}
+  .shell{width:100%;max-width:480px;min-height:100vh;background:var(--bg);display:flex;flex-direction:column;}
+  header{padding:24px 22px 20px;background:linear-gradient(180deg,var(--bg) 0%,var(--bg-2) 100%);color:var(--paper);}
+  .brandrow{display:flex;align-items:center;justify-content:space-between;gap:12px;}
+  .brand-left{display:flex;align-items:center;gap:12px;}
+  .brand-mark{width:40px;height:40px;border:1.5px solid rgba(233,226,203,.18);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .brand-mark svg{width:20px;height:20px;stroke:var(--amber-tint);}
+  h1{font-family:'Noto Naskh Arabic',serif;font-weight:700;font-size:20px;margin:0;}
+  .branch-tag{font-size:12px;color:rgba(233,226,203,.75);margin-top:3px;}
+  .logout-btn{background:none;border:1px solid rgba(233,226,203,.25);color:var(--paper);font-size:12.5px;padding:7px 14px;border-radius:999px;cursor:pointer;font-family:inherit;}
+  main{flex:1;background:var(--paper);border-radius:22px 22px 0 0;margin-top:-2px;padding:22px 18px 40px;display:flex;flex-direction:column;gap:26px;}
+  section{display:flex;flex-direction:column;gap:12px;}
+  .section-label{font-size:13px;color:var(--ink-soft);font-weight:600;margin:0;}
+  .tabs{display:flex;gap:8px;background:var(--paper-2);border-radius:999px;padding:4px;margin-bottom:4px;}
+  .tab-btn{flex:1;border:none;background:none;padding:9px 10px;border-radius:999px;font-family:inherit;font-size:13px;font-weight:600;color:var(--ink-soft);cursor:pointer;}
+  .tab-btn.active{background:var(--amber);color:var(--paper);}
+  .view{display:none;flex-direction:column;gap:22px;}
+  .view.active{display:flex;}
+
+  .slip{position:relative;background:var(--paper-2);border:1.5px dashed var(--ink-soft);border-radius:14px;padding:26px 18px 22px;display:flex;flex-direction:column;align-items:center;gap:14px;text-align:center;}
+  .slip::after{content:"";position:absolute;left:0;right:0;bottom:-9px;height:18px;background-image:radial-gradient(circle at 9px 0, var(--bg) 9px, transparent 9.5px);background-size:18px 18px;background-repeat:repeat-x;background-position:9px 0;}
+  .slip-icon{width:52px;height:52px;border-radius:50%;background:var(--paper);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;}
+  .slip-icon svg{width:24px;height:24px;stroke:var(--amber-deep);}
+  .slip p{margin:0;font-size:13.5px;color:var(--ink-soft);line-height:1.6;max-width:30ch;}
+
+  input[type="file"]{display:none;}
+  button{font-family:inherit;border:none;cursor:pointer;font-size:14.5px;font-weight:600;}
+  .btn-primary{background:var(--amber);color:var(--paper);padding:12px 26px;border-radius:999px;box-shadow:var(--shadow);}
+  .btn-primary:disabled{opacity:.5;cursor:default;}
+  .btn-primary:hover:not(:disabled){background:var(--amber-deep);}
+  .btn-ghost{background:transparent;color:var(--ink-soft);padding:8px 14px;border-radius:999px;border:1px solid var(--line);}
+  .btn-stamp{background:var(--stamp);color:var(--amber-tint);padding:14px 20px;border-radius:10px;width:100%;box-shadow:var(--shadow);display:flex;align-items:center;justify-content:center;gap:8px;}
+  .btn-stamp svg{width:18px;height:18px;flex-shrink:0;stroke:currentColor;}
+  .btn-stamp:hover:not(:disabled){background:var(--stamp-deep);}
+  .btn-stamp:disabled{opacity:.5;cursor:default;}
+  .row-btns{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;}
+
+  .preview-wrap{width:100%;display:flex;flex-direction:column;align-items:center;gap:14px;}
+  .preview-img{width:100%;max-height:220px;object-fit:cover;border-radius:10px;border:1px solid var(--line);}
+  .preview-thumb{position:relative;aspect-ratio:1;border-radius:8px;overflow:hidden;border:1px solid var(--line);}
+  .preview-thumb img{width:100%;height:100%;object-fit:cover;display:block;}
+  .preview-thumb button{position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:rgba(20,35,26,0.75);color:#fff;border:none;font-size:12px;line-height:1;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0;}
+
+  .status-line{display:flex;align-items:center;gap:9px;font-size:13.5px;color:var(--ink-soft);padding:4px 2px;}
+  .spinner{width:15px;height:15px;border-radius:50%;border:2px solid var(--line);border-top-color:var(--amber-deep);animation:spin .8s linear infinite;flex-shrink:0;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  .notice{font-size:13px;color:var(--stamp-deep);background:rgba(147,54,42,0.08);border:1px solid rgba(147,54,42,0.25);padding:10px 12px;border-radius:10px;line-height:1.6;}
+
+  .card{background:var(--paper-2);border-radius:14px;padding:18px 16px;border:1px solid var(--line);display:flex;flex-direction:column;gap:16px;}
+  .field{display:flex;flex-direction:column;gap:6px;}
+  .field label{font-size:12.5px;color:var(--ink-soft);font-weight:600;}
+  .field input,.field select{font-family:inherit;font-size:15px;padding:11px 13px;border-radius:9px;border:1px solid var(--line);background:var(--paper);color:var(--ink);}
+  .field input:focus,.field select:focus{outline:2px solid var(--amber-deep);outline-offset:1px;}
+
+  .med-row{display:flex;gap:8px;align-items:center;}
+  .med-row input{flex:1;}
+  .icon-btn{width:36px;height:36px;flex-shrink:0;border-radius:8px;background:var(--paper);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;}
+  .icon-btn svg{width:16px;height:16px;stroke:var(--stamp-deep);}
+  .add-med{display:flex;align-items:center;gap:6px;font-size:13.5px;color:var(--amber-deep);background:none;border:none;padding:6px 2px;justify-content:flex-start;align-self:flex-start;}
+  .add-med svg{width:15px;height:15px;stroke:currentColor;}
+
+  .history-item{background:var(--paper-2);border-radius:12px;border:1px solid var(--line);overflow:hidden;}
+  .history-head{display:flex;justify-content:space-between;align-items:center;padding:13px 14px;cursor:pointer;gap:10px;}
+  .history-head .hh-main{display:flex;flex-direction:column;gap:3px;min-width:0;}
+  .history-head .doc{font-size:14.5px;font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .history-head .meta{font-size:12px;color:var(--ink-soft);}
+  .chev{width:16px;height:16px;stroke:var(--ink-soft);flex-shrink:0;transition:transform .15s ease;}
+  .history-item.open .chev{transform:rotate(180deg);}
+  .history-body{display:none;padding:0 14px 14px;border-top:1px solid var(--line);}
+  .history-item.open .history-body{display:block;}
+  .history-body ul{margin:10px 0;padding-inline-start:18px;font-size:13.5px;line-height:1.9;}
+  .history-actions{display:flex;justify-content:flex-end;margin-top:10px;}
+  .del-btn{font-size:12.5px;color:var(--stamp);background:none;border:none;padding:6px 4px;display:flex;align-items:center;gap:5px;}
+  .del-btn svg{width:14px;height:14px;stroke:currentColor;}
+  .status-badge{font-size:11px;font-weight:600;padding:3px 9px;border-radius:999px;white-space:nowrap;}
+  .status-badge.pending{background:rgba(179,106,44,0.15);color:var(--amber-deep);}
+  .status-badge.approved{background:rgba(90,122,68,0.15);color:#3E5A2C;}
+  .status-badge.rejected{background:rgba(147,54,42,0.12);color:var(--stamp-deep);}
+  .approve-btn{font-size:12.5px;color:#3E5A2C;background:none;border:none;padding:6px 10px;display:flex;align-items:center;gap:5px;}
+  .reject-btn{font-size:12.5px;color:var(--stamp);background:none;border:none;padding:6px 10px;display:flex;align-items:center;gap:5px;}
+  .approve-btn svg,.reject-btn svg{width:14px;height:14px;flex-shrink:0;stroke:currentColor;}
+  .empty-hist{font-size:13.5px;color:var(--ink-soft);text-align:center;padding:18px 10px;border:1px dashed var(--line);border-radius:12px;}
+
+  .login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;width:100%;}
+  .login-card{width:100%;max-width:360px;background:var(--paper);border-radius:16px;padding:28px 22px;box-shadow:var(--shadow);}
+  .login-card h1{text-align:center;margin:0 0 4px;}
+  .login-card .sub{text-align:center;font-size:13px;color:var(--ink-soft);margin:0 0 20px;}
+  .login-error{font-size:13px;color:var(--stamp-deep);background:rgba(147,54,42,0.08);border:1px solid rgba(147,54,42,0.25);padding:9px 11px;border-radius:9px;margin-top:12px;}
+
+  .admin-list{display:flex;flex-direction:column;gap:8px;}
+  .admin-row{display:flex;align-items:center;justify-content:space-between;background:var(--paper-2);border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-size:13.5px;gap:10px;}
+  .admin-row .meta{font-size:12px;color:var(--ink-soft);}
+  .toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--paper);padding:11px 20px;border-radius:999px;font-size:13.5px;box-shadow:var(--shadow);opacity:0;pointer-events:none;transition:opacity .25s ease;z-index:50;white-space:nowrap;}
+  .toast.show{opacity:1;}
+  @media (prefers-reduced-motion:reduce){.spinner{animation:none;}}
+</style>
+</head>
+<body>
+
+<div id="login-screen" class="login-wrap">
+  <div class="login-card">
+    <h1 style="font-family:'Noto Naskh Arabic',serif;">خوێندنەوەی ڕەسیت</h1>
+    <p class="sub">چوونەژوورەوە بە ئیمەیل و وشەی نهێنی</p>
+    <div class="field" style="margin-bottom:12px;">
+      <label for="login-email">ئیمەیل</label>
+      <input type="email" id="login-email" dir="ltr">
+    </div>
+    <div class="field">
+      <label for="login-password">وشەی نهێنی</label>
+      <input type="password" id="login-password" dir="ltr">
+    </div>
+    <button class="btn-primary" id="login-btn" style="width:100%;margin-top:18px;">چوونەژوورەوە</button>
+    <div id="login-error" style="display:none;" class="login-error"></div>
+  </div>
+</div>
+
+<div id="app-screen" class="shell" style="display:none;">
+  <header>
+    <div class="brandrow">
+      <div class="brand-left">
+        <div class="brand-mark"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10.5 20.5L3.5 13.5a5 5 0 117.07-7.07l7 7a5 5 0 01-7.07 7.07z"/><path d="M8.5 8.5l7 7"/></svg></div>
+        <div>
+          <h1>خوێندنەوەی ڕەسیت</h1>
+          <div class="branch-tag" id="branch-tag"></div>
+        </div>
+      </div>
+      <button class="logout-btn" id="logout-btn">دەرچوون</button>
+    </div>
+  </header>
+
+  <main>
+    <div class="tabs" id="tabs">
+      <button class="tab-btn active" data-view="scan-view">سکان</button>
+      <button class="tab-btn" data-view="history-view">مێژوو</button>
+      <button class="tab-btn" data-view="reports-view" id="reports-tab-btn" style="display:none;">ڕاپۆرت</button>
+      <button class="tab-btn" data-view="admin-view" id="admin-tab-btn" style="display:none;">بەڕێوەبردن</button>
+      <button class="tab-btn" data-view="account-view">هەژمار</button>
+    </div>
+
+    <div id="scan-view" class="view active">
+      <section>
+        <p class="section-label">وێنەی ڕەسیت (دەتوانیت چەند وێنەیەک زیاد بکەیت)</p>
+        <div class="slip" id="dropzone">
+          <div class="slip-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8a2 2 0 012-2h1.5l1-1.5h7l1 1.5H18a2 2 0 012 2v10a2 2 0 01-2 2H6a2 2 0 01-2-2V8z"/><circle cx="12" cy="13" r="3.5"/></svg></div>
+          <p>وێنەیەک بگرە یان هەڵیبژێرە بۆ دەستپێکردن</p>
+          <div class="row-btns">
+            <button class="btn-primary" id="camera-btn" type="button">وێنەگرتن</button>
+            <button class="btn-ghost" id="gallery-btn" type="button">هەڵبژاردنی فایل</button>
+          </div>
+          <input type="file" id="camera-input" accept="image/*" capture="environment">
+          <input type="file" id="gallery-input" accept="image/*" multiple>
+        </div>
+        <div id="preview-area" class="preview-wrap" style="display:none;">
+          <div id="preview-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;width:100%;"></div>
+          <div class="row-btns">
+            <button class="btn-ghost" id="add-more-btn" type="button">+ زیادکردنی وێنەیەکی تر</button>
+          </div>
+          <div class="row-btns">
+            <button class="btn-primary" id="read-btn" type="button">بخوێنەوە بە AI</button>
+            <button class="btn-ghost" id="retake-btn" type="button">دەستپێکردنەوە</button>
+          </div>
+        </div>
+        <div id="status-area"></div>
+      </section>
+
+      <section id="form-section" style="display:none;">
+        <p class="section-label">پشتڕاستکردنەوە و خەزنکردن</p>
+        <div class="card">
+          <div class="field">
+            <label for="f-category">جۆر</label>
+            <select id="f-category">
+              <option value="دەرمان">دەرمان</option>
+              <option value="میلک">میلک</option>
+              <option value="بیوتی">بیوتی</option>
+              <option value="تەجهیزات">تەجهیزات</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="f-doctor">ناوی دکتۆر</label>
+            <input type="text" id="f-doctor" placeholder="بۆ نموونە: د. ئاراس محەمەد">
+          </div>
+          <div class="field">
+            <label for="f-phone">ژمارەی مۆبایل</label>
+            <input type="tel" id="f-phone" dir="ltr" style="text-align:right;">
+          </div>
+          <div class="field">
+            <label>دەرمانەکان</label>
+            <div id="med-list"></div>
+            <button class="add-med" type="button" id="add-med-btn">
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+              زیادکردنی دەرمان
+            </button>
+          </div>
+        </div>
+        <button class="btn-stamp" id="save-btn" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg>
+          خەزنکردنی ڕەسیت
+        </button>
+      </section>
+    </div>
+
+    <div id="history-view" class="view">
+      <section>
+        <p class="section-label">ڕەسیتە خەزنکراوەکان</p>
+        <input type="text" id="history-search" placeholder="گەڕان بە ناوی دکتۆر، دەرمان، لق، کارمەند..." style="font-family:inherit;font-size:14px;padding:11px 13px;border-radius:9px;border:1px solid var(--line);background:var(--paper-2);color:var(--ink);">
+        <div id="history-list"><div class="empty-hist">هێشتا هیچ ڕەسیتێک خەزن نەکراوە</div></div>
+      </section>
+    </div>
+
+    <div id="reports-view" class="view">
+      <section>
+        <p class="section-label">کۆی گشتی</p>
+        <div class="admin-list" id="report-total"></div>
+      </section>
+      <section>
+        <p class="section-label">بەپێی لق</p>
+        <div class="admin-list" id="report-by-branch"></div>
+      </section>
+      <section>
+        <p class="section-label">بەپێی کارمەند</p>
+        <div class="admin-list" id="report-by-employee"></div>
+      </section>
+      <section>
+        <p class="section-label">بەپێی جۆر</p>
+        <div class="admin-list" id="report-by-category"></div>
+      </section>
+      <section>
+        <p class="section-label">بەپێی دکتۆر</p>
+        <input type="text" id="doctor-search" placeholder="گەڕان بۆ ناوی دکتۆر..." style="font-family:inherit;font-size:13.5px;padding:9px 12px;border-radius:9px;border:1px solid var(--line);background:var(--paper-2);color:var(--ink);margin-bottom:2px;">
+        <div class="admin-list" id="report-by-doctor"></div>
+      </section>
+      <section>
+        <p class="section-label">دەرمانە زۆر بەکارهاتووەکان</p>
+        <div class="admin-list" id="report-top-medicines"></div>
+      </section>
+      <section id="doctor-detail-section" style="display:none;">
+        <p class="section-label" id="doctor-detail-title">وردەکاری دکتۆر</p>
+        <div class="admin-list" id="doctor-detail-list"></div>
+      </section>
+    </div>
+
+    <div id="admin-view" class="view">
+      <section>
+        <p class="section-label">لقەکان</p>
+        <div class="admin-list" id="branch-list"></div>
+        <div class="card">
+          <div class="field">
+            <label for="new-branch-name">ناوی لقی نوێ</label>
+            <input type="text" id="new-branch-name">
+          </div>
+          <button class="btn-primary" id="add-branch-btn" style="align-self:flex-start;">زیادکردنی لق</button>
+        </div>
+      </section>
+      <section>
+        <p class="section-label">یوزەرەکان</p>
+        <div class="admin-list" id="user-list"></div>
+        <div class="card">
+          <div class="field">
+            <label for="new-user-email">ئیمەیل</label>
+            <input type="email" id="new-user-email" dir="ltr">
+          </div>
+          <div class="field">
+            <label for="new-user-password">وشەی نهێنی سەرەتایی</label>
+            <input type="text" id="new-user-password" dir="ltr">
+          </div>
+          <div class="field">
+            <label for="new-user-role">ڕۆڵ</label>
+            <select id="new-user-role">
+              <option value="employee">کارمەند</option>
+              <option value="manager">مودیر</option>
+              <option value="admin">بەڕێوەبەر</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="new-user-branch">لق</label>
+            <select id="new-user-branch"></select>
+          </div>
+          <button class="btn-primary" id="add-user-btn" style="align-self:flex-start;">زیادکردنی یوزەر</button>
+        </div>
+      </section>
+    </div>
+
+    <div id="account-view" class="view">
+      <section>
+        <p class="section-label">وێنەی هەژمار</p>
+        <div style="display:flex;align-items:center;gap:14px;">
+          <div id="avatar-preview" style="width:64px;height:64px;border-radius:50%;background:var(--paper-2);border:1px solid var(--line);overflow:hidden;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke="var(--ink-soft)" stroke-linecap="round" stroke-linejoin="round" width="28" height="28"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 4-6 8-6s8 2 8 6"/></svg>
+          </div>
+          <div>
+            <button class="btn-ghost" type="button" id="avatar-pick-btn">گۆڕینی وێنە</button>
+            <input type="file" id="avatar-input" accept="image/*" style="display:none;">
+          </div>
+        </div>
+      </section>
+      <section>
+        <p class="section-label">زانیاری هەژمار</p>
+        <div class="admin-list" id="account-info"></div>
+      </section>
+      <section>
+        <p class="section-label">گۆڕینی وشەی نهێنی</p>
+        <div class="card">
+          <div class="field">
+            <label for="cur-password">وشەی نهێنی ئێستا</label>
+            <input type="password" id="cur-password" dir="ltr">
+          </div>
+          <div class="field">
+            <label for="new-password">وشەی نهێنی نوێ</label>
+            <input type="password" id="new-password" dir="ltr">
+          </div>
+          <button class="btn-primary" id="change-pass-btn" style="align-self:flex-start;">گۆڕین</button>
+          <div id="change-pass-msg"></div>
+        </div>
+      </section>
+    </div>
+  </main>
+</div>
+
+<div class="toast" id="toast">خەزن کرا</div>
+
+<script>
+(function(){
+  // ---- Point this at your deployed backend (see /backend/README.md) ----
+  const BACKEND_URL = 'https://zewin-rx-scan.vercel.app';
+
+  let token = localStorage.getItem('rxscan_token') || null;
+  let currentUser = null;
+
+  const $ = (id) => document.getElementById(id);
+  const loginScreen = $('login-screen');
+  const appScreen = $('app-screen');
+
+  async function api(path, options) {
+    options = options || {};
+    const headers = Object.assign({'Content-Type':'application/json'}, options.headers || {});
+    if (token) headers['Authorization'] = 'Bearer ' + token;
+    const res = await fetch(BACKEND_URL + path, Object.assign({}, options, { headers }));
+    if (res.status === 401) {
+      logout();
+      throw new Error('unauthorized');
+    }
+    if (!res.ok) {
+      let body = {};
+      try { body = await res.json(); } catch(e){}
+      throw Object.assign(new Error(body.error || 'request_failed'), { status: res.status, body });
+    }
+    if (res.status === 204) return null;
+    return res.json();
+  }
+
+  function logout(){
+    token = null;
+    currentUser = null;
+    localStorage.removeItem('rxscan_token');
+    appScreen.style.display = 'none';
+    loginScreen.style.display = 'flex';
+  }
+
+  $('logout-btn').addEventListener('click', logout);
+
+  $('login-btn').addEventListener('click', async () => {
+    const email = $('login-email').value.trim();
+    const password = $('login-password').value;
+    $('login-error').style.display = 'none';
+    try{
+      const data = await api('/api/auth/login', {
+        method:'POST',
+        body: JSON.stringify({email, password})
+      });
+      token = data.token;
+      currentUser = data.user;
+      localStorage.setItem('rxscan_token', token);
+      enterApp();
+    } catch(e){
+      $('login-error').textContent = 'ئیمەیل یان وشەی نهێنی هەڵەیە';
+      $('login-error').style.display = 'block';
+    }
+  });
+
+  async function enterApp(){
+    loginScreen.style.display = 'none';
+    appScreen.style.display = 'flex';
+    $('branch-tag').textContent = (currentUser.branchName || 'بێ لق') + ' · ' + currentUser.email;
+    $('admin-tab-btn').style.display = currentUser.role === 'admin' ? 'block' : 'none';
+    $('reports-tab-btn').style.display = currentUser.role === 'admin' ? 'block' : 'none';
+    fillAccountInfo();
+    await loadHistory();
+    if (currentUser.role === 'admin'){
+      await loadBranches();
+      await loadUsers();
+      await loadReports();
+    }
+  }
+
+  function fillAccountInfo(){
+    $('account-info').innerHTML =
+      '<div class="admin-row"><span>ئیمەیل</span><span class="meta">'+escapeHtml(currentUser.email)+'</span></div>'+
+      '<div class="admin-row"><span>ڕۆڵ</span><span class="meta">'+roleLabel(currentUser.role)+'</span></div>'+
+      '<div class="admin-row"><span>لق</span><span class="meta">'+escapeHtml(currentUser.branchName||'بێ لق')+'</span></div>';
+    updateAvatarDisplays();
+  }
+
+  function updateAvatarDisplays(){
+    const src = currentUser && currentUser.avatarData;
+    const preview = $('avatar-preview');
+    if (src){
+      preview.innerHTML = '<img src="'+src+'" style="width:100%;height:100%;object-fit:cover;">';
+    } else {
+      preview.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke="var(--ink-soft)" stroke-linecap="round" stroke-linejoin="round" width="28" height="28"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 4-6 8-6s8 2 8 6"/></svg>';
+    }
+    const brandMark = document.querySelector('.brand-mark');
+    if (brandMark){
+      brandMark.innerHTML = src
+        ? '<img src="'+src+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">'
+        : '<svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10.5 20.5L3.5 13.5a5 5 0 117.07-7.07l7 7a5 5 0 01-7.07 7.07z"/><path d="M8.5 8.5l7 7"/></svg>';
+    }
+  }
+
+  $('avatar-pick-btn').addEventListener('click', () => $('avatar-input').click());
+  $('avatar-input').addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    try{
+      const b64 = await fileToBase64(file);
+      const data = await api('/api/auth/avatar', {method:'POST', body: JSON.stringify({imageBase64: b64, mediaType: file.type || 'image/jpeg'})});
+      currentUser.avatarData = data.avatarData;
+      updateAvatarDisplays();
+    } catch(err){
+      alert('نەتوانرا وێنەکە باربکرێت');
+    }
+  });
+
+  $('change-pass-btn').addEventListener('click', async () => {
+    const currentPassword = $('cur-password').value;
+    const newPassword = $('new-password').value;
+    const msg = $('change-pass-msg');
+    msg.innerHTML = '';
+    if (!currentPassword || !newPassword){
+      msg.innerHTML = '<div class="notice">هەردوو خانەکە پڕ بکەوە</div>';
+      return;
+    }
+    try{
+      await api('/api/auth/change-password', {method:'POST', body: JSON.stringify({currentPassword, newPassword})});
+      $('cur-password').value=''; $('new-password').value='';
+      msg.innerHTML = '<div class="admin-row" style="color:#3E5A2C;">وشەی نهێنی گۆڕدرا</div>';
+    } catch(e){
+      msg.innerHTML = '<div class="notice">وشەی نهێنی ئێستا هەڵەیە یان نوێیەکە زۆر کورتە</div>';
+    }
+  });
+
+  // Resume session if a token is already stored
+  (async function tryResume(){
+    if (!token) return;
+    try{
+      currentUser = await api('/api/auth/me');
+      await enterApp();
+    } catch(e){
+      logout();
+    }
+  })();
+
+  // ---- tabs ----
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+      btn.classList.add('active');
+      $(btn.dataset.view).classList.add('active');
+    });
+  });
+
+  // ---- scan flow ----
+  const dropzone = $('dropzone'), previewArea = $('preview-area'), previewGrid = $('preview-grid');
+  const cameraInput = $('camera-input'), galleryInput = $('gallery-input');
+  const statusArea = $('status-area'), formSection = $('form-section'), medList = $('med-list');
+  const fDoctor = $('f-doctor'), fPhone = $('f-phone');
+
+  let currentFiles = [];
+
+  $('camera-btn').addEventListener('click', () => cameraInput.click());
+  $('gallery-btn').addEventListener('click', () => galleryInput.click());
+  $('add-more-btn').addEventListener('click', () => galleryInput.click());
+  cameraInput.addEventListener('change', e => addFiles(e.target.files));
+  galleryInput.addEventListener('change', e => addFiles(e.target.files));
+
+  function addFiles(fileList){
+    if (!fileList || !fileList.length) return;
+    currentFiles.push(...Array.from(fileList));
+    renderPreviewGrid();
+    dropzone.style.display = 'none';
+    previewArea.style.display = 'flex';
+    statusArea.innerHTML = '';
+    cameraInput.value = ''; galleryInput.value = '';
+  }
+
+  function renderPreviewGrid(){
+    previewGrid.innerHTML = '';
+    currentFiles.forEach((file, i) => {
+      const div = document.createElement('div');
+      div.className = 'preview-thumb';
+      const img = document.createElement('img');
+      img.src = URL.createObjectURL(file);
+      const removeBtn = document.createElement('button');
+      removeBtn.type = 'button';
+      removeBtn.textContent = '×';
+      removeBtn.addEventListener('click', () => {
+        currentFiles.splice(i, 1);
+        if (currentFiles.length === 0){
+          previewArea.style.display = 'none';
+          dropzone.style.display = 'flex';
+        } else {
+          renderPreviewGrid();
+        }
+      });
+      div.appendChild(img);
+      div.appendChild(removeBtn);
+      previewGrid.appendChild(div);
+    });
+  }
+
+  $('retake-btn').addEventListener('click', () => {
+    currentFiles = [];
+    previewArea.style.display = 'none';
+    dropzone.style.display = 'flex';
+    statusArea.innerHTML = '';
+    cameraInput.value = ''; galleryInput.value = '';
+  });
+
+  function setStatus(html){ statusArea.innerHTML = html; }
+  function showThinking(){ setStatus('<div class="status-line"><span class="spinner"></span><span>هەڵدەسەنگێنرێت، چاوەڕوان بە...</span></div>'); }
+  function showNotice(text){ setStatus('<div class="notice">'+text+'</div>'); }
+
+  function fileToBase64(file){
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result.split(',')[1]);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+
+  $('read-btn').addEventListener('click', async () => {
+    if (!currentFiles.length) return;
+    $('read-btn').disabled = true;
+    showThinking();
+    try{
+      const primary = currentFiles[0];
+      const b64 = await fileToBase64(primary);
+      const data = await api('/api/scan', {
+        method:'POST',
+        body: JSON.stringify({ imageBase64: b64, mediaType: primary.type || 'image/jpeg' })
+      });
+      setStatus('');
+      fillForm(data);
+    } catch(e){
+      showNotice('نەتوانرا وێنەکە بخوێندرێتەوە. تکایە دووبارە هەوڵ بدەوە یان بە دەست بنووسە.');
+      fillForm({});
+    } finally {
+      $('read-btn').disabled = false;
+    }
+  });
+
+  function addMedRow(value){
+    const row = document.createElement('div');
+    row.className = 'med-row';
+    row.innerHTML = '<input type="text" placeholder="ناوی دەرمان" value="'+escapeAttr(value||'')+'">'+
+      '<button type="button" class="icon-btn"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>';
+    row.querySelector('button').addEventListener('click', () => row.remove());
+    medList.appendChild(row);
+  }
+  function escapeAttr(s){ return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;'); }
+  function escapeHtml(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function roleLabel(role){ return role==='admin' ? 'بەڕێوەبەر' : (role==='manager' ? 'مودیر' : 'کارمەند'); }
+
+  $('add-med-btn').addEventListener('click', () => addMedRow(''));
+
+  function fillForm(data){
+    fDoctor.value = (data && data.doctorName) || '';
+    fPhone.value = (data && data.phone) || '';
+    $('f-category').value = 'دەرمان';
+    medList.innerHTML = '';
+    const meds = (data && Array.isArray(data.medicines)) ? data.medicines.filter(Boolean) : [];
+    if (meds.length === 0) addMedRow(''); else meds.forEach(m => addMedRow(m));
+    formSection.style.display = 'flex';
+    formSection.scrollIntoView({behavior:'smooth', block:'start'});
+  }
+
+  $('save-btn').addEventListener('click', async () => {
+    const doctorName = fDoctor.value.trim();
+    const phone = fPhone.value.trim();
+    const category = $('f-category').value;
+    const medicines = Array.from(medList.querySelectorAll('input')).map(i => i.value.trim()).filter(Boolean);
+    if (!doctorName && !phone && medicines.length === 0){
+      showNotice('تکایە هیچ نەبێت یەک خانە پڕ بکەوە پێش خەزنکردن.');
+      return;
+    }
+    $('save-btn').disabled = true;
+    try{
+      const body = {doctorName, phone, medicines, category};
+      if (currentFiles.length){
+        body.images = await Promise.all(currentFiles.map(async f => ({
+          imageBase64: await fileToBase64(f),
+          mediaType: f.type || 'image/jpeg',
+        })));
+      }
+      await api('/api/prescriptions', { method:'POST', body: JSON.stringify(body) });
+      showToast();
+      formSection.style.display = 'none';
+      previewArea.style.display = 'none';
+      dropzone.style.display = 'flex';
+      currentFiles = [];
+      cameraInput.value=''; galleryInput.value='';
+      statusArea.innerHTML='';
+      await loadHistory();
+    } catch(e){
+      showNotice('نەتوانرا خەزن بکرێت. تکایە دووبارە هەوڵ بدەوە.');
+    } finally {
+      $('save-btn').disabled = false;
+    }
+  });
+
+  function showToast(){
+    const t = $('toast');
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 1800);
+  }
+
+  // ---- history ----
+  function statusLabel(s){
+    if (s==='approved') return 'ئەپرۆڤکراو';
+    if (s==='rejected') return 'ڕەتکراوەتەوە';
+    return 'چاوەڕوان';
+  }
+
+  let allHistoryRows = [];
+
+  function renderHistoryList(rows){
+    const list = $('history-list');
+    const canReview = currentUser && (currentUser.role === 'admin' || currentUser.role === 'manager');
+    if (!rows.length){ list.innerHTML = '<div class="empty-hist">هیچ ئەنجامێک نەدۆزرایەوە</div>'; return; }
+    list.innerHTML = '';
+    rows.forEach(r => {
+      const item = document.createElement('div');
+      item.className = 'history-item';
+      const dateStr = new Date(r.createdAt).toLocaleDateString('ckb', {year:'numeric', month:'short', day:'numeric'});
+      const status = r.status || 'pending';
+      const extraMeta = [r.branchName, r.employeeEmail].filter(Boolean).join(' · ');
+      item.innerHTML =
+        '<div class="history-head"><div class="hh-main">'+
+          '<div class="doc">'+escapeHtml(r.doctorName||'بێ ناوی دکتۆر')+' <span style="font-weight:400;color:var(--ink-soft);">· '+escapeHtml(r.category||'دەرمان')+'</span></div>'+
+          '<div class="meta">'+escapeHtml(dateStr)+' · '+r.medicines.length+' دەرمان'+(extraMeta ? ' · '+escapeHtml(extraMeta) : '')+'</div>'+
+        '</div>'+
+        '<span class="status-badge '+status+'">'+statusLabel(status)+'</span>'+
+        '<svg class="chev" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></div>'+
+        '<div class="history-body">'+
+          (r.medicines.length ? '<ul>'+r.medicines.map(m=>'<li>'+escapeHtml(m)+'</li>').join('')+'</ul>' : '<p style="font-size:13px;color:var(--ink-soft);margin:10px 0 0;">دەرمانێک تۆمار نەکراوە</p>')+
+          (r.phone ? '<div style="font-size:13px;color:var(--ink-soft);margin-top:8px;">ژمارە: '+escapeHtml(r.phone)+'</div>' : '')+
+          (r.imageCount ? '<button class="add-med" type="button" data-view-image="'+r.id+'" style="margin-top:8px;"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8a2 2 0 012-2h1.5l1-1.5h7l1 1.5H18a2 2 0 012 2v10a2 2 0 01-2 2H6a2 2 0 01-2-2V8z"/><circle cx="12" cy="13" r="3.5"/></svg>بینینی وێنە ('+r.imageCount+')</button><div id="img-'+r.id+'" style="display:none;margin-top:8px;grid-template-columns:repeat(3,1fr);gap:8px;"></div>' : '')+
+          '<div class="history-actions" style="justify-content:space-between;">'+
+            (canReview && status === 'pending' ?
+              '<div><button class="approve-btn" type="button" data-approve="'+r.id+'"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg>ئەپرۆڤ</button>'+
+              '<button class="reject-btn" type="button" data-reject="'+r.id+'"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6L6 18"/></svg>ڕەتکردنەوە</button></div>'
+              : '<span></span>')+
+            '<button class="del-btn" type="button"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6L6 18"/></svg>سڕینەوە</button>'+
+          '</div>'+
+        '</div>';
+      item.querySelector('.history-head').addEventListener('click', () => item.classList.toggle('open'));
+      item.querySelector('.del-btn').addEventListener('click', async (ev) => {
+        ev.stopPropagation();
+        try{ await api('/api/prescriptions/'+r.id, {method:'DELETE'}); await loadHistory(); } catch(e){}
+      });
+      const approveBtn = item.querySelector('[data-approve]');
+      if (approveBtn) approveBtn.addEventListener('click', async (ev) => {
+        ev.stopPropagation();
+        try{ await api('/api/prescriptions/'+r.id+'/approve', {method:'POST'}); await loadHistory(); } catch(e){}
+      });
+      const rejectBtn = item.querySelector('[data-reject]');
+      if (rejectBtn) rejectBtn.addEventListener('click', async (ev) => {
+        ev.stopPropagation();
+        try{ await api('/api/prescriptions/'+r.id+'/reject', {method:'POST'}); await loadHistory(); } catch(e){}
+      });
+      const viewImgBtn = item.querySelector('[data-view-image]');
+      if (viewImgBtn) viewImgBtn.addEventListener('click', async (ev) => {
+        ev.stopPropagation();
+        const holder = document.getElementById('img-'+r.id);
+        if (holder.style.display !== 'none'){ holder.style.display = 'none'; return; }
+        holder.style.display = 'grid';
+        if (!holder.dataset.loaded){
+          try{
+            const data = await api('/api/prescriptions/'+r.id+'/images');
+            const imgs = data.images || [];
+            holder.innerHTML = imgs.length
+              ? imgs.map(img => '<img src="'+img.imageData+'" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:8px;border:1px solid var(--line);">').join('')
+              : '<div class="empty-hist">وێنە نییە</div>';
+            holder.dataset.loaded = '1';
+          } catch(e){
+            holder.innerHTML = '<div class="empty-hist">نەتوانرا وێنەکە باربکرێت</div>';
+          }
+        }
+      });
+      list.appendChild(item);
+    });
+  }
+
+  function filterHistory(term){
+    term = term.trim().toLowerCase();
+    if (!term) return allHistoryRows;
+    return allHistoryRows.filter(r => {
+      const haystack = [
+        r.doctorName, r.phone, r.category, r.branchName, r.employeeEmail,
+        ...(r.medicines||[])
+      ].filter(Boolean).join(' ').toLowerCase();
+      return haystack.includes(term);
+    });
+  }
+
+  $('history-search').addEventListener('input', (e) => {
+    renderHistoryList(filterHistory(e.target.value));
+  });
+
+  async function loadHistory(){
+    const list = $('history-list');
+    try{
+      const rows = await api('/api/prescriptions');
+      allHistoryRows = rows;
+      renderHistoryList(filterHistory($('history-search').value));
+    } catch(e){
+      list.innerHTML = '<div class="empty-hist">نەتوانرا لیستەکە باربکرێت</div>';
+    }
+  }
+
+  // ---- admin: branches ----
+  async function loadBranches(){
+    const branches = await api('/api/branches');
+    const list = $('branch-list');
+    list.innerHTML = branches.map(b =>
+      '<div class="admin-row"><span>'+escapeHtml(b.name)+'</span><button class="del-btn" data-id="'+b.id+'">سڕینەوە</button></div>'
+    ).join('') || '<div class="empty-hist">هیچ لقێک نییە</div>';
+    list.querySelectorAll('.del-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        await api('/api/branches/'+btn.dataset.id, {method:'DELETE'});
+        await loadBranches();
+      });
+    });
+    const sel = $('new-user-branch');
+    sel.innerHTML = branches.map(b => '<option value="'+b.id+'">'+escapeHtml(b.name)+'</option>').join('');
+  }
+
+  $('add-branch-btn').addEventListener('click', async () => {
+    const name = $('new-branch-name').value.trim();
+    if (!name) return;
+    await api('/api/branches', {method:'POST', body: JSON.stringify({name})});
+    $('new-branch-name').value = '';
+    await loadBranches();
+  });
+
+  // ---- admin: users ----
+  async function loadUsers(){
+    const users = await api('/api/users');
+    const list = $('user-list');
+    list.innerHTML = users.map(u =>
+      '<div class="admin-row"><span>'+escapeHtml(u.email)+'<div class="meta">'+roleLabel(u.role)+' · '+escapeHtml(u.branchName||'بێ لق')+'</div></span>'+
+      '<div style="display:flex;gap:4px;">'+
+      '<button class="approve-btn" data-reset="'+u.id+'" type="button">دووبارە دانانی وشەی نهێنی</button>'+
+      '<button class="del-btn" data-id="'+u.id+'">سڕینەوە</button>'+
+      '</div></div>'+
+      '<div class="reset-row" id="reset-row-'+u.id+'" style="display:none;padding:8px 12px;gap:8px;">'+
+        '<input type="text" placeholder="وشەی نهێنی نوێ" id="reset-input-'+u.id+'" style="flex:1;font-family:inherit;font-size:13.5px;padding:8px 10px;border-radius:8px;border:1px solid var(--line);background:var(--paper);" dir="ltr">'+
+        '<button class="btn-primary" data-confirm-reset="'+u.id+'" style="padding:8px 16px;">دانان</button>'+
+      '</div>'
+    ).join('') || '<div class="empty-hist">هیچ یوزەرێک نییە</div>';
+    list.querySelectorAll('.del-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        await api('/api/users/'+btn.dataset.id, {method:'DELETE'});
+        await loadUsers();
+      });
+    });
+    list.querySelectorAll('[data-reset]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const row = document.getElementById('reset-row-'+btn.dataset.reset);
+        row.style.display = row.style.display === 'none' ? 'flex' : 'none';
+      });
+    });
+    list.querySelectorAll('[data-confirm-reset]').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const id = btn.dataset.confirmReset;
+        const input = document.getElementById('reset-input-'+id);
+        const val = input.value;
+        if (!val || val.length < 4){ alert('وشەی نهێنی دەبێت لانیکەم ٤ پیت بێت'); return; }
+        try{
+          await api('/api/users/'+id+'/reset-password', {method:'POST', body: JSON.stringify({newPassword: val})});
+          alert('وشەی نهێنی نوێ کرایەوە');
+          await loadUsers();
+        } catch(e){
+          alert('نەتوانرا بگۆڕدرێت');
+        }
+      });
+    });
+  }
+
+  $('add-user-btn').addEventListener('click', async () => {
+    const email = $('new-user-email').value.trim();
+    const password = $('new-user-password').value;
+    const role = $('new-user-role').value;
+    const branchId = Number($('new-user-branch').value) || null;
+    if (!email || !password) return;
+    try{
+      await api('/api/users', {method:'POST', body: JSON.stringify({email, password, role, branchId})});
+      $('new-user-email').value=''; $('new-user-password').value='';
+      await loadUsers();
+    } catch(e){
+      alert('ئیمەیلەکە پێشتر بەکارهاتووە یان هەڵەیەک ڕوویدا');
+    }
+  });
+
+  // ---- reports ----
+  function reportRow(name, count){
+    return '<div class="admin-row"><span>'+escapeHtml(name)+'</span><span class="meta">'+count+'</span></div>';
+  }
+
+  let allDoctorRows = [];
+
+  function renderDoctorList(rows){
+    const doctorList = $('report-by-doctor');
+    doctorList.innerHTML = rows.map(r =>
+      '<div class="admin-row" style="cursor:pointer;" data-doctor="'+escapeAttr(r.name)+'"><span>'+escapeHtml(r.name)+'</span><span class="meta">'+r.count+'</span></div>'
+    ).join('') || '<div class="empty-hist">هیچ نییە</div>';
+    doctorList.querySelectorAll('[data-doctor]').forEach(row => {
+      row.addEventListener('click', () => loadDoctorDetail(row.dataset.doctor));
+    });
+  }
+
+  $('doctor-search').addEventListener('input', (e) => {
+    const term = e.target.value.trim().toLowerCase();
+    renderDoctorList(term ? allDoctorRows.filter(r => r.name.toLowerCase().includes(term)) : allDoctorRows);
+  });
+
+  async function loadReports(){
+    try{
+      const data = await api('/api/reports/overview');
+      $('report-total').innerHTML = reportRow('کۆی گشتی ڕەسیتەکان', data.total);
+      $('report-by-branch').innerHTML = data.byBranch.map(r => reportRow(r.name, r.count)).join('') || '<div class="empty-hist">هیچ نییە</div>';
+      $('report-by-employee').innerHTML = data.byEmployee.map(r => reportRow(r.name, r.count)).join('') || '<div class="empty-hist">هیچ نییە</div>';
+      $('report-by-category').innerHTML = (data.byCategory||[]).map(r => reportRow(r.name, r.count)).join('') || '<div class="empty-hist">هیچ نییە</div>';
+      $('report-top-medicines').innerHTML = data.topMedicines.map(r => reportRow(r.name, r.count)).join('') || '<div class="empty-hist">هیچ نییە</div>';
+
+      allDoctorRows = data.byDoctor;
+      renderDoctorList(allDoctorRows);
+    } catch(e){
+      $('report-total').innerHTML = '<div class="empty-hist">نەتوانرا ڕاپۆرت باربکرێت</div>';
+    }
+  }
+
+  async function loadDoctorDetail(name){
+    const section = $('doctor-detail-section');
+    const list = $('doctor-detail-list');
+    $('doctor-detail-title').textContent = 'وردەکاری: ' + name;
+    section.style.display = 'flex';
+    section.scrollIntoView({behavior:'smooth', block:'start'});
+    try{
+      const data = await api('/api/reports/doctor?name=' + encodeURIComponent(name));
+      if (!data.prescriptions.length){ list.innerHTML = '<div class="empty-hist">هیچ ڕەسیتێک نییە</div>'; return; }
+      list.innerHTML = data.prescriptions.map(p => {
+        const dateStr = new Date(p.createdAt).toLocaleDateString('ckb', {year:'numeric', month:'short', day:'numeric'});
+        return '<div class="admin-row" style="align-items:flex-start;flex-direction:column;gap:4px;">'+
+          '<span>'+escapeHtml(p.branchName||'—')+' · '+escapeHtml(p.employeeEmail||'—')+' · '+escapeHtml(p.category||'دەرمان')+' · '+escapeHtml(dateStr)+'</span>'+
+          '<span class="meta">'+(p.medicines.length ? escapeHtml(p.medicines.join('، ')) : 'دەرمانێک تۆمار نەکراوە')+'</span>'+
+        '</div>';
+      }).join('');
+    } catch(e){
+      list.innerHTML = '<div class="empty-hist">نەتوانرا باربکرێت</div>';
+    }
+  }
+})();
+</script>
+</body>
+</html>

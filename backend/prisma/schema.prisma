@@ -1,0 +1,52 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "rhel-openssl-3.0.x"]
+}
+
+model Branch {
+  id            Int            @id @default(autoincrement())
+  name          String
+  createdAt     DateTime       @default(now())
+  users         User[]
+  prescriptions Prescription[]
+}
+
+model User {
+  id            Int            @id @default(autoincrement())
+  email         String         @unique
+  passwordHash  String
+  role          String         @default("employee") // "admin" | "manager" | "employee"
+  branchId      Int?
+  branch        Branch?        @relation(fields: [branchId], references: [id])
+  avatarData    String?        @db.Text // data URI, e.g. "data:image/jpeg;base64,..."
+  createdAt     DateTime       @default(now())
+  prescriptions Prescription[]
+}
+
+model Prescription {
+  id         Int                @id @default(autoincrement())
+  doctorName String             @default("")
+  phone      String             @default("")
+  medicines  String             @db.Text // JSON-encoded string[]
+  category   String             @default("دەرمان") // "دەرمان" | "میلک" | "بیوتی" | "تەجهیزات"
+  status     String             @default("pending") // "pending" | "approved" | "rejected"
+  images     PrescriptionImage[]
+  branchId   Int
+  branch     Branch             @relation(fields: [branchId], references: [id])
+  userId     Int
+  user       User               @relation(fields: [userId], references: [id])
+  createdAt  DateTime           @default(now())
+}
+
+model PrescriptionImage {
+  id             Int          @id @default(autoincrement())
+  imageData      String       @db.Text // data URI, e.g. "data:image/jpeg;base64,..."
+  prescriptionId Int
+  prescription   Prescription @relation(fields: [prescriptionId], references: [id], onDelete: Cascade)
+  createdAt      DateTime     @default(now())
+}
