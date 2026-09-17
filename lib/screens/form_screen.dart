@@ -137,7 +137,7 @@ class _FormScreenState extends State<FormScreen> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Couldn't be saved. Please try again.')),
+        const SnackBar(content: Text('Could not be saved. Please try again.')),
       );
     } finally {
       if (mounted) setState(() => _saving = false);
@@ -192,7 +192,7 @@ class _FormScreenState extends State<FormScreen> {
                   ],
                 ),
                 const SizedBox(height: 14),
-                _field('Doctor's name', _doctorCtrl, hint: 'e.g. Dr. Aras Mohammed'),
+                _field("Doctor's name", _doctorCtrl, hint: 'e.g. Dr. Aras Mohammed'),
                 const SizedBox(height: 14),
                 _field('Phone number', _phoneCtrl,
                     hint: '0750 000 0000', keyboardType: TextInputType.phone),
@@ -248,7 +248,7 @@ class _FormScreenState extends State<FormScreen> {
                                   ),
                                 ),
                                 const SizedBox(width: 6),
-                                const Text('This item's previous photo',
+                                const Text('Previous photo for this item',
                                     style: TextStyle(fontSize: 11.5, color: RxColors.inkSoft)),
                               ],
                             ),

@@ -174,7 +174,7 @@ class HistoryScreenState extends State<HistoryScreen> {
     }
     final dataUris = _loadedImages[id];
     if (dataUris == null || dataUris.isEmpty) {
-      return const Text('Couldn't load the photo', style: TextStyle(fontSize: 12.5, color: RxColors.inkSoft));
+      return const Text('Could not load the photo', style: TextStyle(fontSize: 12.5, color: RxColors.inkSoft));
     }
     return GridView.builder(
       shrinkWrap: true,

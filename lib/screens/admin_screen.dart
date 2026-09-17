@@ -241,7 +241,7 @@ class _AdminScreenState extends State<AdminScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Couldn't be changed')));
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not be changed')));
       }
     }
   }

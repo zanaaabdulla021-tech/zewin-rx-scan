@@ -66,7 +66,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
     final data = _overview;
     if (data == null) {
       return const Center(
-        child: Text('Couldn't load the report', style: TextStyle(color: RxColors.inkSoft)),
+        child: Text('Could not load the report', style: TextStyle(color: RxColors.inkSoft)),
       );
     }
 
@@ -143,7 +143,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
   List<Widget> _buildDoctorDetail() {
     final detail = _doctorDetail;
     if (detail == null) {
-      return [const Text('Couldn't be loaded', style: TextStyle(color: RxColors.inkSoft, fontSize: 13))];
+      return [const Text('Could not be loaded', style: TextStyle(color: RxColors.inkSoft, fontSize: 13))];
     }
     final rows = (detail['prescriptions'] as List? ?? []);
     if (rows.isEmpty) {

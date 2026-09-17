@@ -48,7 +48,7 @@ class _AccountScreenState extends State<AccountScreen> {
       if (mounted) setState(() {});
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Couldn't load the photo')));
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not load the photo')));
       }
     } finally {
       if (mounted) setState(() => _uploadingAvatar = false);

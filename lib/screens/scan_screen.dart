@@ -81,7 +81,7 @@ class _ScanScreenState extends State<ScanScreen> {
       } on CloudOcrException catch (ce) {
         if (ce.reason != 'backend_not_configured') {
           setState(() {
-            _notice = 'Couldn't reach the AI server — trying on-device reading (Latin script only).';
+            _notice = 'Could not reach the AI server — trying on-device reading (Latin script only).';
           });
         }
       }
