@@ -624,43 +624,28 @@ button:active{transform:translateY(1px);}
     min-width:0;
     height:auto;
     min-height:0;
-    position:sticky;
-    top:0;
-    z-index:30;
+    position:relative;
     border-right:0;
     border-bottom:1px solid var(--line);
-    box-shadow:0 2px 8px rgba(15,23,42,.04);
   }
   #app-screen .sidebar header,
   #superadmin-screen .sidebar header{
-    padding:14px 16px 10px;
-  }
-  #app-screen .brandrow,
-  #superadmin-screen .brandrow{
-    flex-direction:row!important;
-    align-items:center!important;
-    gap:10px!important;
+    padding:15px 16px;
   }
   #app-screen .tabs,
   #superadmin-screen .tabs{
     flex-direction:row;
     overflow-x:auto;
-    -webkit-overflow-scrolling:touch;
-    padding:8px 12px 10px;
-    gap:6px;
-    scrollbar-width:none;
-  }
-  #app-screen .tabs::-webkit-scrollbar,
-  #superadmin-screen .tabs::-webkit-scrollbar{
-    display:none;
+    padding:8px 10px 11px;
+    gap:5px;
   }
   #app-screen .tab-btn,
   #superadmin-screen .tab-btn{
     width:auto;
     min-width:max-content;
     min-height:40px;
-    padding:9px 15px;
-    border-radius:999px;
+    padding:9px 13px;
+    border-radius:10px;
     text-align:center;
   }
   #app-screen .tab-btn.active,
@@ -669,7 +654,7 @@ button:active{transform:translateY(1px);}
   }
   #app-screen main,
   #superadmin-screen main{
-    padding:18px 14px 90px;
+    padding:22px 15px 45px;
   }
   .stat-grid{
     grid-template-columns:repeat(2,minmax(0,1fr));
@@ -677,42 +662,9 @@ button:active{transform:translateY(1px);}
   }
   .stat-card{
     min-height:115px;
-    padding:14px;
-  }
-  .card{
-    padding:15px;
-  }
-  .med-card{
-    padding:14px;
-  }
-  .med-card-icon{
-    width:52px;
-    height:52px;
-  }
-  .branch-card{
-    padding:14px;
-  }
-  #sa-companies-view section > div[style*="overflow-x:auto"]{
-    -webkit-overflow-scrolling:touch;
-    box-shadow:inset -14px 0 12px -14px rgba(15,23,42,.08);
-  }
-  #sa-companies-table{
-    font-size:12px;
   }
   .page-header h2{font-size:22px;}
   .slip{padding:28px 18px;min-height:270px;}
-  .row-btns{flex-direction:column;align-items:stretch;}
-  .row-btns .btn-primary,
-  .row-btns .btn-ghost,
-  .row-btns .btn-stamp{width:100%;text-align:center;justify-content:center;}
-  #preview-grid{grid-template-columns:repeat(3,1fr)!important;}
-  .med-card-header{flex-wrap:wrap;}
-}
-@media (max-width: 400px){
-  #preview-grid{grid-template-columns:repeat(2,1fr)!important;}
-  .med-card-icon{width:46px;height:46px;}
-  .med-card-title{min-width:0;}
-  .med-name-input{font-size:15px;}
 }
 @media (max-width: 520px){
   .login-card{padding:28px 20px;border-radius:20px;}
