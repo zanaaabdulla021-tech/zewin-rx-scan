@@ -1,0 +1,166 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "rhel-openssl-3.0.x"]
+}
+
+// A single pharmacy business (company) using the app. Every branch and
+// prescription belongs to exactly one organization — data never crosses
+// between organizations. Managed by the platform's super admin.
+model Organization {
+  id           Int           @id @default(autoincrement())
+  name         String
+  status       String        @default("trial") // "trial" | "active" | "suspended" | "expired"
+  plan         String        @default("free") // "free" | "basic" | "business" | "enterprise" — see backend/src/plans.js
+  billingCycle String        @default("monthly") // "monthly" | "yearly" — cost is branchCount × rate, see backend/src/plans.js
+  expiryDate   DateTime?     // when set and in the past, access is blocked regardless of `status`
+  logoData     String?       @db.Text // data URI, e.g. "data:image/png;base64,..."
+  phone        String?
+  email        String?
+  address      String?
+  country      String?
+  city         String?
+  createdAt    DateTime      @default(now())
+  branches     Branch[]
+  memberships  Membership[]
+  activityLogs ActivityLog[]
+  notifications Notification[]
+  payments     Payment[]
+}
+
+model Branch {
+  id             Int            @id @default(autoincrement())
+  name           String
+  organizationId Int
+  organization   Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  approved       Boolean        @default(true) // false = pending super-admin approval; blocks scanning until approved
+  createdAt      DateTime       @default(now())
+  memberships    Membership[]
+  prescriptions  Prescription[]
+}
+
+// One login — a person's identity, shared across every company they
+// belong to. Their role, branch, and access at each company live on
+// their Membership row for that company, not here.
+model User {
+  id           Int          @id @default(autoincrement())
+  email        String       @unique
+  passwordHash String
+  // Platform-level only — "super_admin" or null. A super_admin has no
+  // memberships; every other role is company-scoped via Membership.
+  globalRole   String?
+  avatarData   String?      @db.Text // data URI, e.g. "data:image/jpeg;base64,..."
+  createdAt    DateTime     @default(now())
+  memberships  Membership[]
+  prescriptions Prescription[]
+}
+
+// A person's access at one specific company: their role there and,
+// for non-owner/admin roles, which branch they work at. A user with
+// memberships at two companies has two rows here — one per company —
+// and switches between them without logging out (see /api/auth/switch-company).
+model Membership {
+  id             Int          @id @default(autoincrement())
+  userId         Int
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organizationId Int
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  role           String       @default("employee") // "owner" | "company_admin" | "branch_manager" | "employee" | "viewer"
+  branchId       Int?
+  branch         Branch?      @relation(fields: [branchId], references: [id])
+  createdAt      DateTime     @default(now())
+
+  @@unique([userId, organizationId])
+}
+
+model Prescription {
+  id         Int                 @id @default(autoincrement())
+  doctorName String              @default("")
+  phone      String              @default("")
+  medicines  String              @db.Text // JSON-encoded string[]
+  category   String              @default("Medicine") // "Medicine" | "Dairy" | "Beauty" | "Equipment"
+  source     String              @default("Private") // "Government" | "Private"
+  status     String              @default("pending") // "pending" | "approved" | "rejected"
+  images     PrescriptionImage[]
+  branchId   Int
+  branch     Branch              @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  userId     Int
+  user       User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt  DateTime            @default(now())
+}
+
+model PrescriptionImage {
+  id             Int          @id @default(autoincrement())
+  imageData      String       @db.Text // data URI, e.g. "data:image/jpeg;base64,..."
+  prescriptionId Int
+  prescription   Prescription @relation(fields: [prescriptionId], references: [id], onDelete: Cascade)
+  createdAt      DateTime     @default(now())
+}
+
+// A remembered photo per item/medicine name, so the next time someone
+// scans the same item its picture can be shown automatically. Scoped per
+// organization so pharmacies never see each other's item photos.
+// A remembered photo per item/medicine name, shared across the WHOLE
+// platform (not scoped to one company) — a medicine looks the same no
+// matter which pharmacy is using the app, so every company benefits from
+// photos any company has verified, instead of each re-uploading its own.
+// createdByOrgId/Name record which company last saved this photo, purely
+// for provenance — they never restrict who can see or reuse the photo.
+model ItemImage {
+  name             String   @id // normalized (trimmed, lowercased) medicine name
+  imageData        String   @db.Text
+  createdByOrgId   Int?
+  createdByOrgName String?
+  updatedAt        DateTime @updatedAt
+}
+
+// A record of who did what, for a company's own audit trail and for the
+// platform's activity log. organizationId is null only for platform-level
+// (super_admin) actions like creating or suspending a company.
+model ActivityLog {
+  id             Int           @id @default(autoincrement())
+  organizationId Int?
+  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  userId         Int?
+  userEmail      String? // kept even if the user is later deleted
+  action         String // e.g. "login", "prescription_scanned", "user_created"
+  details        String? // short human-readable extra context
+  createdAt      DateTime      @default(now())
+}
+
+// An in-app notification. userId set = personal (e.g. "your scan was
+// rejected"); userId null = broadcast to every owner/company_admin of
+// that organization (e.g. "your company was suspended").
+model Notification {
+  id             Int           @id @default(autoincrement())
+  organizationId Int?
+  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  userId         Int?
+  title          String
+  body           String?
+  read           Boolean       @default(false)
+  createdAt      DateTime      @default(now())
+}
+
+// A billing payment — either a manual claim ("I've paid, please
+// activate me") that the super admin reviews and approves, or (once
+// wired up) a real gateway transaction. Both paths end the same way:
+// approving a Payment activates the company for one billing period.
+model Payment {
+  id             Int          @id @default(autoincrement())
+  organizationId Int
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  amount         Float
+  currency       String       @default("USD")
+  method         String // "manual" | "zaincash" (more gateways can be added later)
+  status         String       @default("pending") // "pending" | "approved" | "rejected"
+  reference      String? // gateway transaction id, or a note for a manual claim
+  requestedBy    String? // email of whoever submitted the claim
+  reviewedBy     String? // super admin email who approved/rejected it
+  createdAt      DateTime     @default(now())
+  reviewedAt     DateTime?
+}

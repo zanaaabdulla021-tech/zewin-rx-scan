@@ -1,0 +1,44 @@
+name: zewin_rx_scan
+description: "ZEWIN Rx Scan: prescription photo -> OCR -> editable form -> saved to your branch"
+publish_to: 'none'
+version: 0.2.0
+
+environment:
+  sdk: '>=3.3.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.6
+
+  # Camera / gallery capture
+  image_picker: ^1.1.2
+
+  # On-device OCR fallback (Latin-script text only — see README)
+  google_mlkit_text_recognition: ^0.13.0
+
+  # Backend calls: auth, branches, users, prescriptions, OCR proxy
+  http: ^1.2.2
+  shared_preferences: ^2.3.2
+
+  intl: ^0.19.0
+  google_fonts: ^6.2.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+  flutter_launcher_icons: ^0.14.1
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/icon/icon.png
+
+flutter_launcher_icons:
+  android: true
+  ios: false
+  image_path: "assets/icon/icon.png"
+  min_sdk_android: 21
+  adaptive_icon_background: "#F6FAF8"
+  adaptive_icon_foreground: "assets/icon/icon.png"

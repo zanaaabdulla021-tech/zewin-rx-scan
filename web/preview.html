@@ -1,0 +1,1403 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Rx Scan — Design Preview</title>
+<link rel="icon" type="image/png" href="icon-512.png">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    /* Rx Scan design system — premium healthcare SaaS palette */
+    --brand:#16A34A; --brand-deep:#15803D; --brand-tint:#DCFCE7;
+    --bg:#F8FAFC; --card:#FFFFFF;
+    --ink:#0F172A; --ink-soft:#64748B;
+    --line:#E2E8F0;
+    --success:#22C55E; --warning:#F59E0B; --danger:#EF4444; --info:#3B82F6;
+    --success-tint:#DCFCE7; --warning-tint:#FEF3C7; --danger-tint:#FEE2E2; --info-tint:#DBEAFE;
+    --success-deep:#15803D; --warning-deep:#B45309; --danger-deep:#B91C1C; --info-deep:#1D4ED8;
+    /* legacy aliases kept so existing rules below keep working */
+    --bg-2:#F1F5F9; --paper:#F8FAFC; --paper-2:#F1F5F9;
+    --amber:var(--brand); --amber-deep:var(--brand-deep); --amber-tint:var(--brand-tint);
+    --stamp:var(--success); --stamp-deep:var(--success-deep);
+    --pending:var(--warning); --pending-deep:var(--warning-deep);
+    --shadow:0 8px 24px -12px rgba(15,23,42,0.18);
+    --radius:12px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{background:var(--bg);color:var(--ink);font-family:'Vazirmatn',-apple-system,BlinkMacSystemFont,sans-serif;min-height:100vh;display:flex;flex-direction:column;align-items:center;-webkit-font-smoothing:antialiased;}
+  .shell{width:100%;max-width:480px;min-height:100vh;background:var(--bg);display:flex;flex-direction:column;}
+  .sidebar{display:flex;flex-direction:column;background:var(--card);}
+  header{padding:20px 20px 16px;background:var(--card);color:var(--ink);border-bottom:1px solid var(--line);}
+  .brandrow{display:flex;align-items:center;justify-content:space-between;gap:12px;}
+  .brand-left{display:flex;align-items:center;gap:11px;}
+  .brand-mark{width:38px;height:38px;border-radius:10px;overflow:hidden;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 1px 3px rgba(15,23,42,0.15);}
+  .brand-mark svg{width:19px;height:19px;stroke:var(--brand);}
+  h1{font-family:'Vazirmatn',sans-serif;font-weight:800;font-size:18px;margin:0;letter-spacing:-0.01em;}
+  .brand-title{font-weight:800;font-size:16px;color:var(--ink);letter-spacing:-0.01em;}
+  .branch-tag{font-size:12px;color:var(--ink-soft);margin-top:2px;font-weight:500;}
+  .logout-btn{background:none;border:1px solid var(--line);color:var(--ink-soft);font-size:12.5px;padding:7px 14px;border-radius:999px;cursor:pointer;font-family:inherit;transition:all .15s;}
+  .logout-btn:hover{background:var(--danger-tint);border-color:var(--danger);color:var(--danger-deep);}
+  main{flex:1;background:var(--bg);border-radius:0;margin-top:0;padding:20px 16px 40px;display:flex;flex-direction:column;gap:24px;}
+  section{display:flex;flex-direction:column;gap:12px;}
+  .section-label{font-size:12.5px;color:var(--ink-soft);font-weight:700;margin:0;text-transform:uppercase;letter-spacing:.04em;}
+  .tabs{display:flex;gap:4px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:4px;margin-bottom:4px;}
+  .tab-btn{flex:1;border:none;background:none;padding:9px 8px;border-radius:9px;font-family:inherit;font-size:12.5px;font-weight:600;color:var(--ink-soft);cursor:pointer;transition:all .15s;}
+  .tab-btn:hover{background:var(--bg);color:var(--ink);}
+  .tab-btn.active{background:var(--brand);color:#fff;}
+  .view{display:none;flex-direction:column;gap:22px;}
+  .view.active{display:flex;}
+  .sa-view{display:none;flex-direction:column;gap:22px;}
+  .sa-view.active{display:flex;}
+
+  .slip{position:relative;background:var(--card);border:1.5px dashed var(--line);border-radius:var(--radius);padding:26px 18px 22px;display:flex;flex-direction:column;align-items:center;gap:14px;text-align:center;}
+  .slip::after{content:"";position:absolute;left:0;right:0;bottom:-9px;height:18px;background-image:radial-gradient(circle at 9px 0, var(--bg) 9px, transparent 9.5px);background-size:18px 18px;background-repeat:repeat-x;background-position:9px 0;}
+  .slip-icon{width:52px;height:52px;border-radius:50%;background:var(--brand-tint);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;}
+  .slip-icon svg{width:24px;height:24px;stroke:var(--brand-deep);}
+  .slip p{margin:0;font-size:13.5px;color:var(--ink-soft);line-height:1.6;max-width:30ch;}
+
+  input[type="file"]{display:none;}
+  button{font-family:inherit;border:none;cursor:pointer;font-size:14.5px;font-weight:600;}
+  .btn-primary{background:var(--brand);color:#fff;padding:12px 24px;border-radius:10px;box-shadow:0 1px 2px rgba(15,23,42,.08);transition:background .15s;}
+  .btn-primary:disabled{opacity:.5;cursor:default;}
+  .btn-primary:hover:not(:disabled){background:var(--brand-deep);}
+  .btn-ghost{background:var(--card);color:var(--ink-soft);padding:8px 14px;border-radius:9px;border:1px solid var(--line);transition:all .15s;}
+  .btn-ghost:hover{background:var(--bg);color:var(--ink);}
+  .btn-stamp{background:var(--success);color:#fff;padding:14px 20px;border-radius:10px;width:100%;box-shadow:0 1px 2px rgba(15,23,42,.08);display:flex;align-items:center;justify-content:center;gap:8px;transition:background .15s;}
+  .btn-stamp svg{width:18px;height:18px;flex-shrink:0;stroke:currentColor;}
+  .btn-stamp:hover:not(:disabled){background:var(--success-deep);}
+  .btn-stamp:disabled{opacity:.5;cursor:default;}
+  .row-btns{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;}
+
+  .preview-wrap{width:100%;display:flex;flex-direction:column;align-items:center;gap:14px;}
+  .preview-img{width:100%;max-height:220px;object-fit:cover;border-radius:10px;border:1px solid var(--line);}
+  .preview-thumb{position:relative;aspect-ratio:1;border-radius:8px;overflow:hidden;border:1px solid var(--line);}
+  .preview-thumb img{width:100%;height:100%;object-fit:cover;display:block;}
+  .preview-thumb button{position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:rgba(15,23,42,0.65);color:#fff;border:none;font-size:12px;line-height:1;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0;}
+
+  .status-line{display:flex;align-items:center;gap:9px;font-size:13.5px;color:var(--ink-soft);padding:4px 2px;}
+  .spinner{width:15px;height:15px;border-radius:50%;border:2px solid var(--line);border-top-color:var(--brand);animation:spin .8s linear infinite;flex-shrink:0;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  .notice{font-size:13px;color:var(--danger-deep);background:var(--danger-tint);border:1px solid rgba(239,68,68,0.25);padding:10px 12px;border-radius:10px;line-height:1.6;}
+
+  .card{background:var(--card);border-radius:var(--radius);padding:18px 16px;border:1px solid var(--line);display:flex;flex-direction:column;gap:16px;box-shadow:0 1px 2px rgba(15,23,42,.04);}
+  .field{display:flex;flex-direction:column;gap:6px;}
+  .field label{font-size:12.5px;color:var(--ink-soft);font-weight:600;}
+  .field input,.field select{font-family:inherit;font-size:15px;padding:11px 13px;border-radius:9px;border:1px solid var(--line);background:var(--card);color:var(--ink);transition:border-color .15s, box-shadow .15s;}
+  .field input:focus,.field select:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 3px var(--brand-tint);}
+
+  .med-row{display:flex;gap:8px;align-items:center;}
+  .med-row input{flex:1;}
+  .icon-btn{width:36px;height:36px;flex-shrink:0;border-radius:9px;background:var(--card);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;transition:background .15s;}
+  .icon-btn:hover{background:var(--bg);}
+  .icon-btn svg{width:16px;height:16px;stroke:var(--danger);}
+  .add-med{display:flex;align-items:center;gap:6px;font-size:13.5px;color:var(--brand-deep);background:none;border:none;padding:6px 2px;justify-content:flex-start;align-self:flex-start;}
+  .add-med svg{width:15px;height:15px;stroke:currentColor;}
+  .med-card{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:18px;display:flex;flex-direction:column;gap:14px;box-shadow:0 1px 3px rgba(15,23,42,.05);margin-bottom:14px;}
+  .med-card-header{display:flex;align-items:flex-start;gap:12px;}
+  .med-card-icon{width:64px;height:64px;border-radius:14px;background:var(--bg);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0;overflow:hidden;}
+  .med-card-icon img{width:100%;height:100%;object-fit:cover;}
+  .med-card-title{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px;padding-top:2px;}
+  .med-name-input{border:none;background:none;font-size:17px;font-weight:700;color:var(--ink);padding:2px 0;width:100%;font-family:inherit;}
+  .med-name-input:focus{outline:none;border-bottom:1.5px solid var(--brand);}
+  .med-card-type{font-size:12.5px;color:var(--ink-soft);}
+  .med-remove-btn{width:36px;height:36px;flex-shrink:0;border-radius:11px;}
+  .med-info-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;background:var(--bg);border-radius:14px;padding:14px 16px;}
+  @media (max-width:720px){ .med-info-grid{grid-template-columns:1fr 1fr;} }
+  @media (max-width:480px){ .med-info-grid{grid-template-columns:1fr;} }
+  .med-info-item{display:flex;flex-direction:column;gap:6px;}
+  .med-info-item .mi-icon{width:22px;height:22px;border-radius:7px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .med-info-item .mi-icon svg{width:13px;height:13px;}
+  .med-info-item .mi-head{display:flex;align-items:center;gap:6px;}
+  .med-info-item.used-for .mi-icon{background:var(--success-tint);}
+  .med-info-item.used-for .mi-icon svg{stroke:var(--success-deep);}
+  .med-info-item.used-for .mi-label{color:var(--success-deep);}
+  .med-info-item.active-ingredient .mi-icon{background:var(--info-tint);}
+  .med-info-item.active-ingredient .mi-icon svg{stroke:var(--info-deep);}
+  .med-info-item.active-ingredient .mi-label{color:var(--info-deep);}
+  .med-info-item.important .mi-icon{background:#EDE9FE;}
+  .med-info-item.important .mi-icon svg{stroke:#6D28D9;}
+  .med-info-item.important .mi-label{color:#6D28D9;}
+  .med-info-item.side-effects .mi-icon{background:var(--warning-tint);}
+  .med-info-item.side-effects .mi-icon svg{stroke:var(--warning-deep);}
+  .med-info-item.side-effects .mi-label{color:var(--warning-deep);}
+  .med-info-item .mi-label{font-size:12px;font-weight:700;}
+  .med-info-item .mi-value{font-size:12.5px;color:var(--ink);line-height:1.55;}
+  .med-info-item .mi-list{margin:0;padding-inline-start:15px;font-size:12.5px;color:var(--ink);line-height:1.65;}
+  .med-info-loading{font-size:11.5px;color:var(--ink-soft);display:flex;align-items:center;gap:6px;}
+  .med-info-unavailable{font-size:11.5px;color:var(--ink-soft);font-style:italic;padding:4px 2px;}
+  .med-disclaimer{font-size:10.5px;color:var(--ink-soft);padding:2px 2px 0;}
+
+  .history-item{background:var(--card);border-radius:var(--radius);border:1px solid var(--line);overflow:hidden;transition:box-shadow .15s;}
+  .history-item:hover{box-shadow:0 1px 4px rgba(15,23,42,.06);}
+  .history-head{display:flex;justify-content:space-between;align-items:center;padding:13px 14px;cursor:pointer;gap:10px;}
+  .history-head .hh-main{display:flex;flex-direction:column;gap:3px;min-width:0;}
+  .history-head .doc{font-size:14.5px;font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .history-head .meta{font-size:12px;color:var(--ink-soft);}
+  .chev{width:16px;height:16px;stroke:var(--ink-soft);flex-shrink:0;transition:transform .15s ease;}
+  .history-item.open .chev{transform:rotate(180deg);}
+  .history-body{display:none;padding:0 14px 14px;border-top:1px solid var(--line);}
+  .history-item.open .history-body{display:block;}
+  .history-body ul{margin:10px 0;padding-inline-start:18px;font-size:13.5px;line-height:1.9;}
+  .history-actions{display:flex;justify-content:flex-end;margin-top:10px;}
+  .del-btn{font-size:12.5px;color:var(--danger);background:none;border:none;padding:6px 4px;display:flex;align-items:center;gap:5px;}
+  .del-btn svg{width:14px;height:14px;stroke:currentColor;}
+  .status-badge{font-size:11px;font-weight:700;padding:3px 10px;border-radius:999px;white-space:nowrap;}
+  .status-badge.pending{background:var(--warning-tint);color:var(--warning-deep);}
+  .status-badge.approved{background:var(--success-tint);color:var(--success-deep);}
+  .status-badge.rejected{background:var(--danger-tint);color:var(--danger-deep);}
+  .approve-btn{font-size:12.5px;color:var(--success-deep);background:none;border:none;padding:6px 10px;display:flex;align-items:center;gap:5px;}
+  .reject-btn{font-size:12.5px;color:var(--danger);background:none;border:none;padding:6px 10px;display:flex;align-items:center;gap:5px;}
+  .approve-btn svg,.reject-btn svg{width:14px;height:14px;flex-shrink:0;stroke:currentColor;}
+  .empty-hist{font-size:13.5px;color:var(--ink-soft);text-align:center;padding:18px 10px;border:1px dashed var(--line);border-radius:var(--radius);}
+
+  .login-wrap{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;width:100%;background:var(--bg);}
+  .login-card{width:100%;max-width:360px;background:var(--card);border-radius:16px;padding:28px 22px;box-shadow:0 8px 24px -12px rgba(15,23,42,.15);border:1px solid var(--line);}
+  .login-card h1{text-align:center;margin:0 0 4px;}
+  .login-card .sub{text-align:center;font-size:13px;color:var(--ink-soft);margin:0 0 20px;}
+  .login-error{font-size:13px;color:var(--danger-deep);background:var(--danger-tint);border:1px solid rgba(239,68,68,0.25);padding:9px 11px;border-radius:9px;margin-top:12px;}
+
+  .admin-list{display:flex;flex-direction:column;gap:8px;}
+  .admin-row{display:flex;align-items:center;justify-content:space-between;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-size:13.5px;gap:10px;}
+  .admin-row .meta{font-size:12px;color:var(--ink-soft);}
+
+  .page-header{display:flex;flex-direction:column;gap:2px;margin-bottom:4px;}
+  .page-header h2{margin:0;font-size:20px;font-weight:800;letter-spacing:-0.01em;color:var(--ink);}
+  .page-header p{margin:0;font-size:13px;color:var(--ink-soft);}
+
+  .stat-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;}
+  .stat-card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:14px;display:flex;flex-direction:column;gap:6px;box-shadow:0 1px 2px rgba(15,23,42,.04);}
+  .stat-card .stat-icon{width:32px;height:32px;border-radius:9px;background:var(--brand-tint);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .stat-card .stat-icon svg{width:16px;height:16px;stroke:var(--brand-deep);}
+  .stat-card .stat-label{font-size:11.5px;color:var(--ink-soft);font-weight:600;}
+  .stat-card .stat-value{font-size:22px;font-weight:800;color:var(--ink);letter-spacing:-0.01em;}
+  .branch-card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:16px;display:flex;flex-direction:column;gap:12px;box-shadow:0 1px 2px rgba(15,23,42,.04);}
+  .branch-card-head{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;}
+  .branch-card-head .name{font-weight:700;font-size:14.5px;}
+  .branch-stat-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .branch-stat-row .bs-label{font-size:11px;color:var(--ink-soft);}
+  .branch-stat-row .bs-value{font-size:17px;font-weight:800;color:var(--ink);}
+  .branch-grid{display:grid;grid-template-columns:1fr;gap:12px;}
+  @media (min-width:640px){ .branch-grid{grid-template-columns:1fr 1fr;} }
+  @media (min-width:1100px){ .branch-grid{grid-template-columns:1fr 1fr 1fr;} }
+  .toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:11px 20px;border-radius:999px;font-size:13.5px;box-shadow:var(--shadow);opacity:0;pointer-events:none;transition:opacity .25s ease;z-index:50;white-space:nowrap;max-width:90vw;overflow:hidden;text-overflow:ellipsis;}
+  .toast.show{opacity:1;}
+  .toast.success{background:var(--success-deep);}
+  .toast.error{background:var(--danger-deep);}
+  .toast.info{background:var(--info-deep);}
+  @media (prefers-reduced-motion:reduce){.spinner{animation:none;}}
+  @media (min-width: 900px){
+    #app-screen.shell{max-width:1100px;flex-direction:row;min-height:100vh;margin:0 auto;border-radius:0;}
+    #app-screen .sidebar{width:250px;flex-shrink:0;min-height:100vh;position:sticky;top:0;border-right:1px solid var(--line);}
+    #app-screen header{border-radius:0;flex:none;display:flex;flex-direction:column;}
+    #app-screen .brandrow{flex-direction:column;align-items:flex-start;gap:16px;}
+    #app-screen .tabs{flex-direction:column;align-items:stretch;justify-content:flex-start;background:none;padding:0 16px;gap:2px;border-radius:0;flex:none;margin-top:8px;}
+    #app-screen .tab-btn{flex:none;}
+    #app-screen .tab-btn{text-align:left;border-radius:10px;padding:11px 14px;justify-content:flex-start;}
+    #app-screen main{border-radius:0;flex:1;min-width:0;max-width:760px;}
+    #app-screen .logout-btn{align-self:flex-start;}
+    #superadmin-screen.shell{max-width:1300px;flex-direction:row;min-height:100vh;margin:0 auto;border-radius:0;}
+    #superadmin-screen .sidebar{width:250px;flex-shrink:0;min-height:100vh;position:sticky;top:0;border-right:1px solid var(--line);}
+    #superadmin-screen header{border-radius:0;padding:20px;}
+    #superadmin-screen .brandrow{flex-direction:column;align-items:flex-start;gap:16px;}
+    #superadmin-screen .tabs{flex-direction:column;background:none;padding:0 16px;gap:2px;border-radius:0;margin-top:8px;}
+    #superadmin-screen .tab-btn{text-align:left;border-radius:10px;padding:11px 14px;justify-content:flex-start;}
+    #superadmin-screen main{flex:1;min-width:0;padding:28px 36px 60px;max-width:1050px;}
+    #superadmin-screen .stat-grid{grid-template-columns:repeat(4,1fr);}
+    #sa-dashboard-view section[style*="grid-template-columns:1fr"]{grid-template-columns:1fr 1fr!important;}
+  }
+</style>
+
+<style id="rx-premium-redesign">
+/* =========================================================
+   RX SCAN — PREMIUM SAAS REDESIGN
+   Visual layer only: existing HTML/JS/API behavior preserved.
+   ========================================================= */
+
+:root{
+  --brand:#16A34A;
+  --brand-deep:#15803D;
+  --brand-soft:#ECFDF3;
+  --brand-line:#BBF7D0;
+  --bg:#F6F8FB;
+  --card:#FFFFFF;
+  --ink:#0B1220;
+  --ink-soft:#64748B;
+  --line:#E5EAF0;
+  --line-strong:#D7DEE8;
+  --success:#16A34A;
+  --warning:#D97706;
+  --danger:#DC2626;
+  --info:#2563EB;
+  --shadow-sm:0 1px 2px rgba(15,23,42,.04);
+  --shadow-md:0 12px 30px rgba(15,23,42,.07);
+  --shadow-lg:0 22px 60px rgba(15,23,42,.10);
+  --radius:16px;
+}
+
+/* ---------- global ---------- */
+html,body{
+  background:
+    radial-gradient(circle at 85% 0%, rgba(22,163,74,.055), transparent 26rem),
+    var(--bg);
+  color:var(--ink);
+}
+body{
+  display:block;
+  min-height:100vh;
+}
+button,input,select,textarea{font-family:'Vazirmatn',sans-serif;}
+button{transition:transform .16s ease,box-shadow .16s ease,background .16s ease,border-color .16s ease;}
+button:active{transform:translateY(1px);}
+
+/* ---------- login ---------- */
+.login-wrap{
+  min-height:100vh;
+  background:
+    radial-gradient(circle at 10% 10%, rgba(22,163,74,.12), transparent 25rem),
+    radial-gradient(circle at 90% 90%, rgba(37,99,235,.08), transparent 24rem),
+    #F7FAF8;
+}
+.login-card{
+  max-width:430px;
+  padding:38px;
+  border:1px solid rgba(226,232,240,.9);
+  border-radius:24px;
+  box-shadow:var(--shadow-lg);
+  background:rgba(255,255,255,.94);
+  backdrop-filter:blur(18px);
+}
+.login-card h1{font-size:25px;}
+.login-card .sub{font-size:13.5px;margin-bottom:26px;}
+.login-card .btn-primary{width:100%;padding:13px 18px;border-radius:12px;}
+
+/* ---------- application shell ---------- */
+#app-screen.shell,
+#superadmin-screen.shell{
+  width:100%;
+  max-width:none;
+  min-height:100vh;
+  margin:0;
+  display:flex;
+  flex-direction:row;
+  background:var(--bg);
+}
+#app-screen .sidebar,
+#superadmin-screen .sidebar{
+  width:272px;
+  min-width:272px;
+  min-height:100vh;
+  position:sticky;
+  top:0;
+  height:100vh;
+  background:#FFFFFF;
+  border-right:1px solid var(--line);
+  box-shadow:8px 0 30px rgba(15,23,42,.025);
+  z-index:20;
+}
+#app-screen .sidebar header,
+#superadmin-screen .sidebar header{
+  padding:22px 20px 18px;
+  border-bottom:1px solid var(--line);
+}
+.brand-left{gap:12px;}
+.brand-mark{
+  width:42px!important;
+  height:42px!important;
+  border-radius:13px!important;
+  background:#F0FDF4;
+  border:1px solid #DCFCE7;
+  box-shadow:0 5px 16px rgba(22,163,74,.10)!important;
+}
+.brand-title{font-size:17px;}
+.branch-tag{font-size:11.5px;color:#94A3B8;}
+
+/* ---------- sidebar nav ---------- */
+#app-screen .tabs,
+#superadmin-screen .tabs{
+  display:flex;
+  flex-direction:column;
+  gap:5px;
+  padding:18px 12px;
+  margin:0;
+  background:#fff;
+  border:0;
+  border-radius:0;
+}
+#app-screen .tab-btn,
+#superadmin-screen .tab-btn{
+  flex:none;
+  width:100%;
+  text-align:left;
+  display:flex;
+  align-items:center;
+  justify-content:flex-start;
+  min-height:45px;
+  padding:11px 13px;
+  border-radius:11px;
+  color:#64748B;
+  background:transparent;
+  font-size:13px;
+  font-weight:650;
+}
+#app-screen .tab-btn:hover,
+#superadmin-screen .tab-btn:hover{
+  background:#F8FAFC;
+  color:#0F172A;
+}
+#app-screen .tab-btn.active,
+#superadmin-screen .tab-btn.active{
+  color:#15803D;
+  background:#ECFDF3;
+  box-shadow:inset 3px 0 0 #16A34A;
+}
+#app-screen .logout-btn,
+#superadmin-screen .icon-btn{
+  margin-left:auto;
+  width:36px;
+  height:36px;
+  border-radius:10px;
+}
+
+/* ---------- main ---------- */
+#app-screen main,
+#superadmin-screen main{
+  flex:1;
+  min-width:0;
+  max-width:none;
+  padding:30px 38px 70px;
+  background:
+    radial-gradient(circle at 80% 0%, rgba(22,163,74,.035), transparent 28rem),
+    var(--bg);
+}
+#app-screen .view,
+#superadmin-screen .sa-view{
+  width:100%;
+  max-width:1450px;
+  margin:0 auto;
+  gap:24px;
+}
+.page-header{
+  margin-bottom:2px;
+}
+.page-header h2{
+  font-size:26px;
+  letter-spacing:-.035em;
+  line-height:1.2;
+}
+.page-header p{
+  margin-top:7px;
+  font-size:13.5px;
+  color:#718096;
+}
+
+/* ---------- cards ---------- */
+.card,
+.stat-card,
+.history-item,
+.admin-row,
+#sa-companies-table,
+#sa-companies-view section > div[style*="overflow-x:auto"]{
+  border-color:var(--line);
+  box-shadow:var(--shadow-sm);
+}
+.card{
+  border-radius:16px;
+  padding:20px;
+}
+.card:hover{
+  box-shadow:0 8px 26px rgba(15,23,42,.055);
+}
+
+/* ---------- stats ---------- */
+.stat-grid{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:15px;
+}
+.stat-card{
+  min-height:132px;
+  position:relative;
+  overflow:hidden;
+  padding:18px;
+  border-radius:17px;
+  background:#fff;
+}
+.stat-card::after{
+  content:"";
+  position:absolute;
+  width:90px;
+  height:90px;
+  border-radius:50%;
+  right:-35px;
+  top:-35px;
+  background:rgba(22,163,74,.045);
+}
+.stat-card .stat-icon{
+  width:38px;
+  height:38px;
+  border-radius:11px;
+  background:#ECFDF3;
+  border:1px solid #DCFCE7;
+}
+.stat-card .stat-value{
+  font-size:27px;
+  letter-spacing:-.045em;
+}
+.stat-card .stat-label{
+  font-size:11.5px;
+}
+
+/* ---------- scan hero ---------- */
+.slip{
+  min-height:300px;
+  padding:34px;
+  border:1.5px dashed #C9D4DF;
+  border-radius:20px;
+  background:
+    linear-gradient(180deg,#FFFFFF,#FBFEFC);
+  box-shadow:var(--shadow-sm);
+}
+.slip:hover{
+  border-color:#86EFAC;
+  box-shadow:0 12px 34px rgba(22,163,74,.07);
+}
+.slip-icon{
+  width:68px;
+  height:68px;
+  border-radius:20px;
+  background:#ECFDF3;
+  border:1px solid #BBF7D0;
+}
+.slip-icon svg{width:29px;height:29px;}
+.slip p{max-width:42ch;font-size:14px;}
+.btn-primary{
+  background:linear-gradient(180deg,#22C55E,#16A34A);
+  border-radius:11px;
+  padding:12px 18px;
+  box-shadow:0 7px 18px rgba(22,163,74,.18);
+}
+.btn-primary:hover:not(:disabled){
+  background:linear-gradient(180deg,#16A34A,#15803D);
+  box-shadow:0 10px 22px rgba(22,163,74,.22);
+  transform:translateY(-1px);
+}
+.btn-ghost{
+  border-radius:10px;
+  background:#fff;
+}
+
+/* ---------- forms ---------- */
+.field{gap:7px;}
+.field label{font-size:12px;color:#64748B;}
+.field input,.field select{
+  min-height:43px;
+  border-radius:11px;
+  border-color:#DCE3EB;
+  background:#fff;
+}
+.field input:hover,.field select:hover{border-color:#C7D2DE;}
+.field input:focus,.field select:focus{
+  border-color:#22C55E;
+  box-shadow:0 0 0 4px rgba(34,197,94,.10);
+}
+
+/* ---------- tables ---------- */
+#sa-companies-table{
+  overflow:hidden;
+  border-radius:17px;
+  border-collapse:separate!important;
+  border-spacing:0;
+}
+#sa-companies-table thead{
+  background:#F8FAFC;
+}
+#sa-companies-table th{
+  padding:13px 15px!important;
+  font-size:11px!important;
+  text-transform:uppercase;
+  letter-spacing:.045em;
+  color:#64748B!important;
+}
+#sa-companies-table td{
+  padding:14px 15px!important;
+  border-bottom:1px solid #EEF2F6;
+  color:#334155;
+}
+#sa-companies-table tbody tr{
+  transition:background .15s ease;
+}
+#sa-companies-table tbody tr:hover{
+  background:#F8FFFA;
+}
+#sa-companies-table tbody tr:last-child td{border-bottom:0;}
+
+/* search */
+#sa-company-search{
+  width:100%;
+  min-height:45px;
+  padding-left:15px!important;
+  border-radius:12px!important;
+  background:#fff!important;
+  box-shadow:var(--shadow-sm);
+}
+#sa-company-search:focus{
+  outline:none;
+  border-color:#22C55E!important;
+  box-shadow:0 0 0 4px rgba(34,197,94,.09)!important;
+}
+
+/* ---------- lists ---------- */
+.admin-list{gap:10px;}
+.admin-row{
+  border-radius:13px;
+  padding:13px 15px;
+  background:#fff;
+}
+.admin-row:hover{
+  border-color:#D5E6DA;
+  background:#FCFFFD;
+}
+
+/* ---------- badges ---------- */
+.status-badge{
+  padding:5px 10px;
+  font-size:10.5px;
+  border-radius:999px;
+  letter-spacing:.01em;
+}
+
+/* ---------- activity/payment sections ---------- */
+#sa-payments-view .admin-list,
+#sa-activity-view .admin-list,
+#sa-admins-view .card{
+  max-width:100%;
+}
+#sa-payments-view .admin-row,
+#sa-activity-view .admin-row{
+  min-height:60px;
+}
+
+/* ---------- section labels ---------- */
+.section-label{
+  color:#64748B;
+  font-size:11px;
+  letter-spacing:.08em;
+}
+
+/* ---------- notification panel ---------- */
+#notif-panel{
+  top:76px!important;
+  right:24px!important;
+  left:auto!important;
+  max-width:390px!important;
+  border:1px solid var(--line);
+  background:#fff!important;
+  box-shadow:var(--shadow-lg)!important;
+  border-radius:18px!important;
+}
+
+/* ---------- toast ---------- */
+.toast{
+  bottom:28px;
+  padding:12px 18px;
+  border-radius:12px;
+  box-shadow:var(--shadow-lg);
+}
+
+/* ---------- mobile ---------- */
+@media (max-width: 899px){
+  #app-screen.shell,
+  #superadmin-screen.shell{
+    display:block;
+  }
+  #app-screen .sidebar,
+  #superadmin-screen .sidebar{
+    width:100%;
+    min-width:0;
+    height:auto;
+    min-height:0;
+    position:relative;
+    border-right:0;
+    border-bottom:1px solid var(--line);
+  }
+  #app-screen .sidebar header,
+  #superadmin-screen .sidebar header{
+    padding:15px 16px;
+  }
+  #app-screen .tabs,
+  #superadmin-screen .tabs{
+    flex-direction:row;
+    overflow-x:auto;
+    padding:8px 10px 11px;
+    gap:5px;
+  }
+  #app-screen .tab-btn,
+  #superadmin-screen .tab-btn{
+    width:auto;
+    min-width:max-content;
+    min-height:40px;
+    padding:9px 13px;
+    border-radius:10px;
+    text-align:center;
+  }
+  #app-screen .tab-btn.active,
+  #superadmin-screen .tab-btn.active{
+    box-shadow:none;
+  }
+  #app-screen main,
+  #superadmin-screen main{
+    padding:22px 15px 45px;
+  }
+  .stat-grid{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:10px;
+  }
+  .stat-card{
+    min-height:115px;
+  }
+  .page-header h2{font-size:22px;}
+  .slip{padding:28px 18px;min-height:270px;}
+}
+@media (max-width: 520px){
+  .login-card{padding:28px 20px;border-radius:20px;}
+  .stat-grid{grid-template-columns:1fr 1fr;}
+  .stat-card .stat-value{font-size:23px;}
+  .card{padding:16px;}
+}
+</style>
+
+
+<style id="rx-profile-page-redesign">
+/* =========================================================
+   RX SCAN — PROFILE / ACCOUNT PAGE
+   Premium multi-company profile UI
+   ========================================================= */
+
+#account-view{
+  max-width:1450px!important;
+}
+
+#account-view .page-header{
+  margin-bottom:20px;
+}
+
+#account-view .page-header h2{
+  font-size:30px;
+  letter-spacing:-.045em;
+}
+
+#account-view .account-hero{
+  display:grid!important;
+  grid-template-columns:360px 1fr;
+  gap:18px;
+  margin-bottom:18px;
+}
+
+/* Turn the existing profile header/card into a premium identity card */
+#account-view .account-profile-card{
+  position:relative;
+  overflow:hidden;
+  padding:25px!important;
+  border-radius:20px!important;
+  border:1px solid var(--line)!important;
+  background:linear-gradient(145deg,#fff 0%,#f9fffb 100%)!important;
+  box-shadow:var(--shadow-md)!important;
+}
+
+#account-view .account-profile-card:before{
+  content:"";
+  position:absolute;
+  width:170px;
+  height:170px;
+  right:-75px;
+  top:-80px;
+  border-radius:50%;
+  background:rgba(22,163,74,.065);
+}
+
+#account-view .account-avatar{
+  width:78px!important;
+  height:78px!important;
+  border-radius:24px!important;
+  border:1px solid #D9F6E2!important;
+  background:#ECFDF3!important;
+  box-shadow:0 8px 22px rgba(22,163,74,.12)!important;
+}
+
+#account-view .account-name{
+  font-size:21px!important;
+  letter-spacing:-.025em;
+}
+
+#account-view .account-meta{
+  color:#64748B!important;
+}
+
+/* Metric cards */
+#account-view .account-metrics{
+  display:grid!important;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:13px;
+}
+
+#account-view .account-metric{
+  min-height:126px;
+  padding:19px!important;
+  border-radius:17px!important;
+  border:1px solid var(--line)!important;
+  background:#fff!important;
+  box-shadow:var(--shadow-sm)!important;
+  position:relative;
+  overflow:hidden;
+}
+
+#account-view .account-metric:hover{
+  transform:translateY(-2px);
+  box-shadow:var(--shadow-md)!important;
+}
+
+#account-view .account-metric-icon{
+  width:39px!important;
+  height:39px!important;
+  border-radius:12px!important;
+  background:#F0FDF4!important;
+  border:1px solid #DCFCE7!important;
+}
+
+#account-view .account-metric-value{
+  font-size:27px!important;
+  font-weight:800!important;
+  letter-spacing:-.045em;
+}
+
+/* Profile navigation tabs */
+#account-view .profile-tabs{
+  display:flex!important;
+  gap:7px!important;
+  padding:6px!important;
+  margin:0 0 18px!important;
+  border:1px solid var(--line)!important;
+  border-radius:14px!important;
+  background:#fff!important;
+  box-shadow:var(--shadow-sm)!important;
+  overflow-x:auto;
+}
+
+#account-view .profile-tab{
+  white-space:nowrap;
+  min-height:40px!important;
+  padding:9px 15px!important;
+  border-radius:9px!important;
+  color:#64748B!important;
+  background:transparent!important;
+  border:0!important;
+  font-weight:650!important;
+}
+
+#account-view .profile-tab:hover{
+  background:#F8FAFC!important;
+  color:#0F172A!important;
+}
+
+#account-view .profile-tab.active{
+  color:#15803D!important;
+  background:#ECFDF3!important;
+  box-shadow:inset 0 0 0 1px #D1FAE5!important;
+}
+
+/* Main profile grid */
+#account-view .profile-content-grid{
+  display:grid!important;
+  grid-template-columns:minmax(0,1.25fr) minmax(340px,.75fr);
+  gap:18px;
+}
+
+/* Section cards */
+#account-view .profile-section{
+  border:1px solid var(--line)!important;
+  border-radius:18px!important;
+  background:#fff!important;
+  box-shadow:var(--shadow-sm)!important;
+  padding:21px!important;
+}
+
+#account-view .profile-section h3{
+  font-size:16px!important;
+  letter-spacing:-.02em;
+}
+
+#account-view .profile-section .section-description{
+  color:#64748B;
+  font-size:12.5px;
+}
+
+/* Companies */
+#account-view .company-grid{
+  display:grid!important;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:13px;
+}
+
+#account-view .company-card{
+  padding:17px!important;
+  border:1px solid var(--line)!important;
+  border-radius:15px!important;
+  background:linear-gradient(180deg,#fff,#fbfdfc)!important;
+  transition:transform .16s ease,box-shadow .16s ease,border-color .16s ease;
+}
+
+#account-view .company-card:hover{
+  transform:translateY(-2px);
+  border-color:#CFE8D7!important;
+  box-shadow:var(--shadow-md)!important;
+}
+
+#account-view .company-logo{
+  width:52px!important;
+  height:52px!important;
+  border-radius:14px!important;
+  border:1px solid #E1E8E3!important;
+  background:#F8FAF9!important;
+}
+
+#account-view .company-name{
+  font-size:15px!important;
+  font-weight:750!important;
+}
+
+#account-view .company-footer{
+  margin-top:15px!important;
+  padding-top:12px!important;
+  border-top:1px solid #EEF2F4!important;
+}
+
+/* Branch list */
+#account-view .branch-table{
+  overflow:hidden;
+  border:1px solid var(--line);
+  border-radius:14px;
+}
+
+#account-view .branch-table table{
+  width:100%;
+  border-collapse:collapse;
+}
+
+#account-view .branch-table th{
+  padding:12px 14px;
+  background:#F8FAFC;
+  color:#64748B;
+  font-size:10.5px;
+  text-transform:uppercase;
+  letter-spacing:.05em;
+  text-align:left;
+}
+
+#account-view .branch-table td{
+  padding:13px 14px;
+  border-top:1px solid #EEF2F5;
+  font-size:12.5px;
+}
+
+#account-view .branch-table tr:hover td{
+  background:#FAFFFC;
+}
+
+/* Role cards */
+#account-view .role-list{
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+
+#account-view .role-card{
+  display:grid;
+  grid-template-columns:1fr auto;
+  gap:12px;
+  align-items:center;
+  padding:14px;
+  border:1px solid var(--line);
+  border-radius:13px;
+  background:#fff;
+}
+
+#account-view .role-card:hover{
+  background:#FAFFFC;
+  border-color:#D5E8DB;
+}
+
+#account-view .permission-badge{
+  padding:5px 9px;
+  border-radius:999px;
+  font-size:10px;
+  font-weight:700;
+  background:#EFF6FF;
+  color:#2563EB;
+}
+
+/* Account settings blocks */
+#account-view .settings-row{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:20px;
+  padding:15px 0;
+  border-bottom:1px solid #EEF2F5;
+}
+
+#account-view .settings-row:last-child{
+  border-bottom:0;
+}
+
+#account-view .settings-title{
+  font-weight:700;
+  font-size:13px;
+}
+
+#account-view .settings-help{
+  margin-top:3px;
+  color:#64748B;
+  font-size:11.5px;
+}
+
+/* Upgrade card */
+#account-view .upgrade-card{
+  position:relative;
+  overflow:hidden;
+  border-radius:18px!important;
+  border:1px solid #DCEBFF!important;
+  background:linear-gradient(135deg,#F2F7FF,#F7FFFA)!important;
+  box-shadow:var(--shadow-sm)!important;
+}
+
+#account-view .upgrade-card:after{
+  content:"";
+  position:absolute;
+  width:150px;
+  height:150px;
+  right:-55px;
+  bottom:-70px;
+  border-radius:50%;
+  background:rgba(37,99,235,.06);
+}
+
+/* Hide old stacked key/value account rows if present and replace visually */
+#account-view .legacy-account-row{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  min-height:52px;
+  padding:0 15px;
+  margin-bottom:8px;
+  border:1px solid var(--line);
+  border-radius:12px;
+  background:#fff;
+}
+
+@media(max-width:1050px){
+  #account-view .account-hero{
+    grid-template-columns:1fr;
+  }
+  #account-view .account-metrics{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+  #account-view .profile-content-grid{
+    grid-template-columns:1fr;
+  }
+}
+
+@media(max-width:700px){
+  #account-view .page-header h2{font-size:24px;}
+  #account-view .account-metrics{
+    grid-template-columns:1fr 1fr;
+  }
+  #account-view .company-grid{
+    grid-template-columns:1fr;
+  }
+  #account-view .profile-section{
+    padding:16px!important;
+  }
+}
+
+@media(max-width:480px){
+  #account-view .account-metrics{
+    grid-template-columns:1fr;
+  }
+  #account-view .account-profile-card{
+    padding:20px!important;
+  }
+}
+</style>
+</head>
+<body>
+
+<div id="confirm-modal" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,0.45);z-index:300;align-items:center;justify-content:center;padding:20px;">
+  <div style="background:var(--card);border-radius:18px;padding:24px 22px;max-width:360px;width:100%;box-shadow:0 24px 60px rgba(15,23,42,.25);">
+    <div style="width:44px;height:44px;border-radius:12px;background:var(--danger-tint);display:flex;align-items:center;justify-content:center;margin-bottom:14px;">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke="var(--danger-deep)" stroke-linecap="round" stroke-linejoin="round" width="22" height="22"><path d="M12 9v4"/><path d="M12 17h.01"/><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>
+    </div>
+    <p style="margin:0 0 6px;font-size:16px;font-weight:800;color:var(--ink);">Delete company?</p>
+    <p style="margin:0 0 20px;font-size:13.5px;color:var(--ink-soft);line-height:1.6;">Delete this company and everything in it? This cannot be undone.</p>
+    <div style="display:flex;gap:10px;justify-content:flex-end;">
+      <button type="button" class="btn-ghost" id="pv-confirm-cancel">Cancel</button>
+      <button type="button" class="btn-primary" id="pv-confirm-ok" style="background:var(--danger);">Delete</button>
+    </div>
+  </div>
+</div>
+
+<div id="preview-bar" style="position:sticky;top:0;z-index:200;background:#0F172A;color:#fff;padding:10px 16px;display:flex;gap:8px;align-items:center;font-family:'Vazirmatn',sans-serif;font-size:13px;flex-wrap:wrap;">
+  <b style="margin-right:10px;">🎨 Design preview — sample data only, no login needed</b>
+  <button class="preview-nav-btn" data-preview="preview-login" type="button">Login</button>
+  <button class="preview-nav-btn" data-preview="preview-app" type="button">Company App</button>
+  <button class="preview-nav-btn" data-preview="preview-superadmin" type="button">Super Admin</button>
+</div>
+
+<style>
+  .preview-nav-btn{background:rgba(255,255,255,.08);color:#fff;border:1px solid rgba(255,255,255,.15);padding:6px 14px;border-radius:8px;cursor:pointer;font-family:inherit;font-size:12.5px;}
+  .preview-nav-btn.active{background:#16A34A;border-color:#16A34A;font-weight:700;}
+  .preview-section{display:none;}
+  .preview-section.active{display:block;}
+  .pv-bar-chart{display:flex;align-items:flex-end;gap:6px;height:120px;padding:8px 0;}
+  .pv-bar-chart .bar-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;}
+  .pv-bar-chart .bar{width:100%;border-radius:4px 4px 0 0;background:var(--brand);}
+  .pv-bar-chart .bar-label{font-size:9px;color:var(--ink-soft);}
+</style>
+
+<!-- ============================= LOGIN ============================= -->
+<div id="preview-login" class="preview-section active">
+  <div class="login-wrap">
+    <div class="login-card">
+      <div class="brand-mark" style="width:56px;height:56px;border-radius:15px;margin:0 auto 14px;background:#F0FDF4;display:flex;align-items:center;justify-content:center;">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke="#16A34A" stroke-linecap="round" stroke-linejoin="round" width="28" height="28"><path d="M4 8a2 2 0 012-2h1.5l1-1.5h7l1 1.5H18a2 2 0 012 2v10a2 2 0 01-2 2H6a2 2 0 01-2-2V8z"/><circle cx="12" cy="13" r="3.5"/></svg>
+      </div>
+      <h1>Rx Scan</h1>
+      <p class="sub">Log in with your email and password</p>
+      <div class="field" style="margin-bottom:12px;">
+        <label>Email</label>
+        <input type="email" value="owner@sarwaran.com" dir="ltr" readonly>
+      </div>
+      <div class="field">
+        <label>Password</label>
+        <input type="password" value="••••••••" dir="ltr" readonly>
+      </div>
+      <button class="btn-primary" style="width:100%;margin-top:18px;">Log in</button>
+      <button type="button" style="width:100%;margin-top:14px;background:none;border:none;color:var(--brand-deep);font-size:12.5px;text-decoration:underline;">Register your pharmacy</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================= COMPANY APP ============================= -->
+<div id="preview-app" class="preview-section">
+  <div id="app-screen" class="shell">
+    <div class="sidebar">
+      <header>
+        <div class="brandrow">
+          <div class="brand-left">
+            <div class="brand-mark"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke="#16A34A" stroke-linecap="round" stroke-linejoin="round" width="19" height="19"><path d="M4 8a2 2 0 012-2h1.5l1-1.5h7l1 1.5H18a2 2 0 012 2v10a2 2 0 01-2 2H6a2 2 0 01-2-2V8z"/><circle cx="12" cy="13" r="3.5"/></svg></div>
+            <div>
+              <div class="brand-title">Rx Scan</div>
+              <div class="branch-tag">Sarwaran Pharmacy · Main Branch · owner@sarwaran.com</div>
+            </div>
+          </div>
+          <button class="icon-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><path d="M18 8a6 6 0 00-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg></button>
+          <button class="logout-btn">Log out</button>
+        </div>
+      </header>
+      <div class="tabs" id="app-tabs">
+        <button class="tab-btn active" data-appview="pv-scan-view">Scan</button>
+        <button class="tab-btn" data-appview="pv-history-view">History</button>
+        <button class="tab-btn" data-appview="pv-reports-view">Reports</button>
+        <button class="tab-btn" data-appview="pv-admin-view">Admin</button>
+        <button class="tab-btn" data-appview="pv-account-view">Account</button>
+      </div>
+    </div>
+
+    <main>
+      <!-- SCAN -->
+      <div id="pv-scan-view" class="view active">
+        <div class="page-header">
+          <h2>Scan a prescription</h2>
+          <p>Snap a photo and let AI read the doctor, medicines, and phone number.</p>
+        </div>
+        <section>
+          <p class="section-label">Review &amp; Save</p>
+          <div class="card">
+            <div class="field"><label>Doctor's name</label><input type="text" value="Dr. Aras Mohammed" readonly></div>
+            <div class="field"><label>Phone number</label><input type="text" value="0750 123 4567" dir="ltr" readonly></div>
+            <div class="field">
+              <label style="display:flex;justify-content:space-between;align-items:center;">
+                <span>Items (2)</span>
+                <button class="btn-ghost" type="button" style="padding:6px 13px;font-size:12.5px;border-color:var(--brand-line);color:var(--brand-deep);">+ Add item</button>
+              </label>
+
+              <div class="med-card">
+                <div class="med-card-header">
+                  <div class="med-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.7" stroke="var(--ink-soft)" stroke-linecap="round" stroke-linejoin="round"><path d="M10.5 20.5L3.5 13.5a4.95 4.95 0 117-7l7 7a4.95 4.95 0 11-7 7z"/><path d="M8.5 8.5l7 7"/></svg></div>
+                  <div class="med-card-title">
+                    <input class="med-name-input" type="text" value="Panadol 500mg" readonly>
+                    <div class="med-card-type">500mg · Tablet · by Haleon</div>
+                    <div style="font-size:11px;color:var(--ink-soft);">Photo added by Shefa Pharmacy</div>
+                  </div>
+                  <button type="button" class="icon-btn med-remove-btn"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+                </div>
+                <div class="med-info-grid">
+                  <div class="med-info-item used-for"><div class="mi-head"><div class="mi-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10.5 20.5L3.5 13.5a4.95 4.95 0 117-7l7 7a4.95 4.95 0 11-7 7z"/><path d="M8.5 8.5l7 7"/></svg></div><span class="mi-label">Used for</span></div><div class="mi-value">Temporary relief of pain and fever.</div></div>
+                  <div class="med-info-item active-ingredient"><div class="mi-head"><div class="mi-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/></svg></div><span class="mi-label">Active ingredient</span></div><div class="mi-value">Paracetamol</div></div>
+                  <div class="med-info-item important"><div class="mi-head"><div class="mi-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l8 4v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6z"/></svg></div><span class="mi-label">Important</span></div><ul class="mi-list"><li>Do not exceed the stated dose</li><li>Avoid with other paracetamol products</li></ul></div>
+                  <div class="med-info-item side-effects"><div class="mi-head"><div class="mi-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v5"/><path d="M12 16h.01"/></svg></div><span class="mi-label">Common side effects</span></div><ul class="mi-list"><li>Rare at normal doses</li><li>Nausea (uncommon)</li></ul></div>
+                </div>
+              </div>
+
+              <div class="med-card">
+                <div class="med-card-header">
+                  <div class="med-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.7" stroke="var(--ink-soft)" stroke-linecap="round" stroke-linejoin="round"><path d="M10.5 20.5L3.5 13.5a4.95 4.95 0 117-7l7 7a4.95 4.95 0 11-7 7z"/><path d="M8.5 8.5l7 7"/></svg></div>
+                  <div class="med-card-title">
+                    <input class="med-name-input" type="text" value="Taido gel" readonly>
+                    <div class="med-card-type">Gel · Topical</div>
+                  </div>
+                  <button type="button" class="icon-btn med-remove-btn"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+                </div>
+                <div class="med-info-grid">
+                  <div class="med-info-item used-for"><div class="mi-head"><div class="mi-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10.5 20.5L3.5 13.5a4.95 4.95 0 117-7l7 7a4.95 4.95 0 11-7 7z"/><path d="M8.5 8.5l7 7"/></svg></div><span class="mi-label">Used for</span></div><div class="mi-value">Pain relief for muscles and joints.</div></div>
+                  <div class="med-info-item active-ingredient"><div class="mi-head"><div class="mi-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/></svg></div><span class="mi-label">Active ingredient</span></div><div class="mi-value">Tiaprofenic acid</div></div>
+                  <div class="med-info-item important"><div class="mi-head"><div class="mi-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l8 4v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6z"/></svg></div><span class="mi-label">Important</span></div><ul class="mi-list"><li>For external use only</li><li>Avoid contact with eyes</li></ul></div>
+                  <div class="med-info-item side-effects"><div class="mi-head"><div class="mi-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v5"/><path d="M12 16h.01"/></svg></div><span class="mi-label">Common side effects</span></div><ul class="mi-list"><li>Skin irritation</li><li>Redness</li></ul></div>
+                </div>
+              </div>
+              <p class="med-disclaimer">Medicine information is AI-assisted and informational only — always verify against the prescription and your professional judgment.</p>
+            </div>
+          </div>
+          <button class="btn-stamp" type="button">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg>
+            Save order
+          </button>
+        </section>
+      </div>
+
+      <!-- HISTORY -->
+      <div id="pv-history-view" class="view">
+        <div class="page-header"><h2>History</h2><p>Every prescription scanned, with its review status.</p></div>
+        <section>
+          <p class="section-label">Saved orders</p>
+          <input type="text" placeholder="Search by doctor, item, branch, employee..." readonly style="font-family:inherit;font-size:14px;padding:11px 13px;border-radius:9px;border:1px solid var(--line);background:var(--card);color:var(--ink);">
+          <div class="history-item open">
+            <div class="history-head"><div class="hh-main"><div class="doc">Dr. Aras Mohammed <span style="font-weight:400;color:var(--ink-soft);">· Medicine · Private</span></div><div class="meta">Sep 20 · 2 Medicine · Main Branch · owner@sarwaran.com</div></div><span class="status-badge pending">Pending</span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></div>
+            <div class="history-body"><ul><li>Panadol 500mg</li><li>Taido gel</li></ul>
+              <div class="history-actions" style="justify-content:space-between;">
+                <div><button class="approve-btn" type="button"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg>Approve</button><button class="reject-btn" type="button"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6L6 18"/></svg>Reject</button></div>
+                <button class="del-btn" type="button"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6L6 18"/></svg>Delete</button>
+              </div>
+            </div>
+          </div>
+          <div class="history-item">
+            <div class="history-head"><div class="hh-main"><div class="doc">Dr. Sara Ahmed <span style="font-weight:400;color:var(--ink-soft);">· Medicine · Government</span></div><div class="meta">Sep 19 · 1 Medicine · Koya Road · sara@sarwaran.com</div></div><span class="status-badge approved">Approved</span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></div>
+          </div>
+        </section>
+      </div>
+
+      <!-- REPORTS -->
+      <div id="pv-reports-view" class="view">
+        <div class="page-header"><h2>Reports</h2><p>How your pharmacy is performing, at a glance.</p></div>
+        <section><div class="stat-grid">
+          <div class="stat-card"><div class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg></div><span class="stat-label">Total orders</span><span class="stat-value">1,240</span></div>
+          <div class="stat-card"><div class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg></div><span class="stat-label">Today's scans</span><span class="stat-value">84</span></div>
+        </div></section>
+        <section>
+          <p class="section-label">By branch</p>
+          <div class="admin-list">
+            <div class="admin-row"><span>Main Branch</span><span class="meta">720</span></div>
+            <div class="admin-row"><span>Koya Road</span><span class="meta">340</span></div>
+            <div class="admin-row"><span>Ainkawa</span><span class="meta">180</span></div>
+          </div>
+        </section>
+      </div>
+
+      <!-- ADMIN -->
+      <div id="pv-admin-view" class="view">
+        <div class="page-header"><h2>Admin</h2><p>Manage branches, your team, and the activity log.</p></div>
+        <section>
+          <p class="section-label">Branches</p>
+          <div class="branch-grid">
+            <div class="branch-card">
+              <div class="branch-card-head"><div><div class="name">Main Branch</div><span class="status-badge approved">Active</span></div><button class="del-btn">Delete</button></div>
+              <div class="branch-stat-row">
+                <div><div class="bs-label">Users</div><div class="bs-value">24</div></div>
+                <div><div class="bs-label">Prescriptions</div><div class="bs-value">1,240</div></div>
+                <div><div class="bs-label">Scans today</div><div class="bs-value">84</div></div>
+                <div><div class="bs-label">Manager</div><div class="bs-value" style="font-size:12.5px;">ahmed@sarwaran.com</div></div>
+              </div>
+              <button class="btn-ghost" type="button">Open control panel</button>
+            </div>
+            <div class="branch-card">
+              <div class="branch-card-head"><div><div class="name">Koya Road</div><span class="status-badge pending">Pending approval</span></div><button class="del-btn">Delete</button></div>
+              <div class="branch-stat-row">
+                <div><div class="bs-label">Users</div><div class="bs-value">12</div></div>
+                <div><div class="bs-label">Prescriptions</div><div class="bs-value">340</div></div>
+                <div><div class="bs-label">Scans today</div><div class="bs-value">21</div></div>
+                <div><div class="bs-label">Manager</div><div class="bs-value" style="font-size:12.5px;">—</div></div>
+              </div>
+              <button class="btn-ghost" type="button">Open control panel</button>
+            </div>
+          </div>
+        </section>
+        <section>
+          <p class="section-label">Users</p>
+          <select style="font-family:inherit;font-size:13.5px;padding:9px 11px;border-radius:9px;border:1px solid var(--line);background:var(--card);color:var(--ink);"><option>Main Branch</option></select>
+          <div class="admin-list">
+            <div class="admin-row"><span>ahmed@sarwaran.com<div class="meta">Branch manager · Main Branch</div></span><div style="display:flex;gap:4px;"><button class="approve-btn" type="button">Reset password</button><button class="del-btn">Delete</button></div></div>
+          </div>
+        </section>
+      </div>
+
+      <!-- ACCOUNT -->
+      <div id="pv-account-view" class="view">
+        <div class="page-header"><h2>Account</h2><p>Your profile, subscription, and company settings.</p></div>
+        <section>
+          <p class="section-label">Subscription</p>
+          <div class="admin-list">
+            <div class="admin-row"><span>Plan</span><span class="meta">Business</span></div>
+            <div class="admin-row"><span>Status</span><span class="meta">Active</span></div>
+            <div class="admin-row"><span>Branches</span><span class="meta">3 / unlimited</span></div>
+            <div class="admin-row"><span>Total (3 branches)</span><span class="meta"><b>$30 / month</b></span></div>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- ============================= SUPER ADMIN ============================= -->
+<div id="preview-superadmin" class="preview-section">
+  <div id="superadmin-screen" class="shell">
+    <div class="sidebar">
+      <header>
+        <div class="brandrow">
+          <div class="brand-left">
+            <div class="brand-mark"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke="#16A34A" stroke-linecap="round" stroke-linejoin="round" width="19" height="19"><path d="M4 8a2 2 0 012-2h1.5l1-1.5h7l1 1.5H18a2 2 0 012 2v10a2 2 0 01-2 2H6a2 2 0 01-2-2V8z"/><circle cx="12" cy="13" r="3.5"/></svg></div>
+            <div><div class="brand-title">Rx Scan</div><div class="branch-tag">Super Admin</div></div>
+          </div>
+          <button class="icon-btn"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg></button>
+        </div>
+      </header>
+      <div class="tabs">
+        <button class="tab-btn active">Dashboard</button>
+        <button class="tab-btn">Pharmacies</button>
+        <button class="tab-btn">Payments</button>
+        <button class="tab-btn">Activity Log</button>
+        <button class="tab-btn">Super Admins</button>
+      </div>
+    </div>
+    <main>
+      <div class="page-header"><h2>Platform overview</h2><p>All companies, subscriptions, and activity across Rx Scan.</p></div>
+      <section><div class="stat-grid">
+        <div class="stat-card"><div class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/></svg></div><span class="stat-label">Total companies</span><span class="stat-value">41</span></div>
+        <div class="stat-card"><div class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 12l3 3 5-6"/></svg></div><span class="stat-label">Active companies</span><span class="stat-value">36</span></div>
+        <div class="stat-card"><div class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></div><span class="stat-label">Total users</span><span class="stat-value">612</span></div>
+        <div class="stat-card"><div class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1v22"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg></div><span class="stat-label">Est. monthly revenue</span><span class="stat-value">$1,860</span></div>
+      </div></section>
+
+      <section style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+        <div class="card">
+          <p class="section-label" style="margin:0 0 8px;">Organizations growth (last 12 months)</p>
+          <div class="pv-bar-chart">
+            <div class="bar-col"><div class="bar" style="height:20%;"></div><div class="bar-label">Oct</div></div>
+            <div class="bar-col"><div class="bar" style="height:28%;"></div><div class="bar-label">Nov</div></div>
+            <div class="bar-col"><div class="bar" style="height:24%;"></div><div class="bar-label">Dec</div></div>
+            <div class="bar-col"><div class="bar" style="height:36%;"></div><div class="bar-label">Jan</div></div>
+            <div class="bar-col"><div class="bar" style="height:42%;"></div><div class="bar-label">Feb</div></div>
+            <div class="bar-col"><div class="bar" style="height:38%;"></div><div class="bar-label">Mar</div></div>
+            <div class="bar-col"><div class="bar" style="height:52%;"></div><div class="bar-label">Apr</div></div>
+            <div class="bar-col"><div class="bar" style="height:60%;"></div><div class="bar-label">May</div></div>
+            <div class="bar-col"><div class="bar" style="height:66%;"></div><div class="bar-label">Jun</div></div>
+            <div class="bar-col"><div class="bar" style="height:74%;"></div><div class="bar-label">Jul</div></div>
+            <div class="bar-col"><div class="bar" style="height:86%;"></div><div class="bar-label">Aug</div></div>
+            <div class="bar-col"><div class="bar" style="height:100%;"></div><div class="bar-label">Sep</div></div>
+          </div>
+        </div>
+        <div class="card">
+          <p class="section-label" style="margin:0 0 8px;">Scans overview (last 12 months)</p>
+          <div class="pv-bar-chart">
+            <div class="bar-col"><div class="bar" style="height:30%;"></div><div class="bar-label">Oct</div></div>
+            <div class="bar-col"><div class="bar" style="height:34%;"></div><div class="bar-label">Nov</div></div>
+            <div class="bar-col"><div class="bar" style="height:40%;"></div><div class="bar-label">Dec</div></div>
+            <div class="bar-col"><div class="bar" style="height:38%;"></div><div class="bar-label">Jan</div></div>
+            <div class="bar-col"><div class="bar" style="height:46%;"></div><div class="bar-label">Feb</div></div>
+            <div class="bar-col"><div class="bar" style="height:52%;"></div><div class="bar-label">Mar</div></div>
+            <div class="bar-col"><div class="bar" style="height:58%;"></div><div class="bar-label">Apr</div></div>
+            <div class="bar-col"><div class="bar" style="height:64%;"></div><div class="bar-label">May</div></div>
+            <div class="bar-col"><div class="bar" style="height:70%;"></div><div class="bar-label">Jun</div></div>
+            <div class="bar-col"><div class="bar" style="height:80%;"></div><div class="bar-label">Jul</div></div>
+            <div class="bar-col"><div class="bar" style="height:90%;"></div><div class="bar-label">Aug</div></div>
+            <div class="bar-col"><div class="bar" style="height:100%;"></div><div class="bar-label">Sep</div></div>
+          </div>
+        </div>
+      </section>
+
+      <section style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+        <div>
+          <p class="section-label">Recent organizations</p>
+          <div class="admin-list">
+            <div class="admin-row"><span>Sarwaran Pharmacy<div class="meta">17 branches · 94 users · Business plan</div></span><div style="display:flex;align-items:center;gap:8px;"><span class="status-badge approved">active</span><button type="button" class="del-btn" id="pv-open-confirm">Delete</button></div></div>
+            <div class="admin-row"><span>Al-Noor Pharmacy<div class="meta">5 branches · 28 users · Pro plan</div></span><span class="status-badge approved">active</span></div>
+            <div class="admin-row"><span>Health Plus<div class="meta">3 branches · 16 users · Basic plan</div></span><span class="status-badge approved">active</span></div>
+          </div>
+        </div>
+        <div>
+          <p class="section-label">Recent activity</p>
+          <div class="admin-list">
+            <div class="admin-row" style="flex-direction:column;align-items:stretch;gap:2px;"><div style="display:flex;justify-content:space-between;"><b>Branch created</b><span class="meta">2h ago</span></div><span class="meta">ahmed@sarwaran.com · Sarwaran Pharmacy · Branch "Koya Road" (pending approval)</span></div>
+            <div class="admin-row" style="flex-direction:column;align-items:stretch;gap:2px;"><div style="display:flex;justify-content:space-between;"><b>User created</b><span class="meta">4h ago</span></div><span class="meta">owner@alnoor.com · Al-Noor Pharmacy · pharmacist@alnoor.com (employee)</span></div>
+            <div class="admin-row" style="flex-direction:column;align-items:stretch;gap:2px;"><div style="display:flex;justify-content:space-between;"><b>Payment approved</b><span class="meta">1d ago</span></div><span class="meta">$170 — extended to 2026-10-20</span></div>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <p class="section-label">Pending branch approvals</p>
+        <div class="admin-list">
+          <div class="admin-row" style="flex-direction:column;align-items:stretch;gap:6px;">
+            <div style="display:flex;justify-content:space-between;"><b>Koya Road</b><span class="meta">Sarwaran Pharmacy</span></div>
+            <span class="meta">Requested Sep 20, 2026, 4:29 PM</span>
+            <div style="display:flex;gap:8px;"><button class="approve-btn" type="button">Approve</button><button class="reject-btn" type="button">Reject</button></div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+</div>
+
+<script>
+  document.querySelectorAll('.preview-nav-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.preview-nav-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.preview-section').forEach(s => s.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById(btn.dataset.preview).classList.add('active');
+    });
+  });
+  document.querySelectorAll('#app-tabs .tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('#app-tabs .tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('#preview-app .view').forEach(v => v.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById(btn.dataset.appview).classList.add('active');
+    });
+  });
+  document.querySelectorAll('#preview-app .history-head').forEach(head => {
+    head.addEventListener('click', () => head.parentElement.classList.toggle('open'));
+  });
+  document.querySelectorAll('.preview-nav-btn')[0].click();
+  const pvOpenBtn = document.getElementById('pv-open-confirm');
+  if (pvOpenBtn){
+    pvOpenBtn.addEventListener('click', () => { document.getElementById('confirm-modal').style.display = 'flex'; });
+    document.getElementById('pv-confirm-cancel').addEventListener('click', () => { document.getElementById('confirm-modal').style.display = 'none'; });
+    document.getElementById('pv-confirm-ok').addEventListener('click', () => { document.getElementById('confirm-modal').style.display = 'none'; });
+  }
+</script>
+</body>
+</html>
