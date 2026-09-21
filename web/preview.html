@@ -278,34 +278,77 @@ button:active{transform:translateY(1px);}
 .login-card .sub{font-size:13.5px;margin-bottom:26px;}
 .login-card .btn-primary{width:100%;padding:13px 18px;border-radius:12px;}
 
-/* ---------- application shell ---------- */
-#app-screen.shell,
-#superadmin-screen.shell{
-  width:100%;
-  max-width:none;
-  min-height:100vh;
-  margin:0;
-  display:flex;
-  flex-direction:row;
-  background:var(--bg);
-}
-#app-screen .sidebar,
-#superadmin-screen .sidebar{
-  width:272px;
-  min-width:272px;
-  min-height:100vh;
-  position:sticky;
-  top:0;
-  height:100vh;
-  background:#FFFFFF;
-  border-right:1px solid var(--line);
-  box-shadow:8px 0 30px rgba(15,23,42,.025);
-  z-index:20;
-}
-#app-screen .sidebar header,
-#superadmin-screen .sidebar header{
-  padding:22px 20px 18px;
-  border-bottom:1px solid var(--line);
+/* ---------- application shell (desktop layout only — mobile uses the
+   base stacked layout from the main stylesheet) ---------- */
+@media (min-width: 900px){
+  #app-screen.shell,
+  #superadmin-screen.shell{
+    width:100%;
+    max-width:none;
+    min-height:100vh;
+    margin:0;
+    display:flex;
+    flex-direction:row;
+    background:var(--bg);
+  }
+  #app-screen .sidebar,
+  #superadmin-screen .sidebar{
+    width:272px;
+    min-width:272px;
+    min-height:100vh;
+    position:sticky;
+    top:0;
+    height:100vh;
+    background:#FFFFFF;
+    border-right:1px solid var(--line);
+    box-shadow:8px 0 30px rgba(15,23,42,.025);
+    z-index:20;
+  }
+  #app-screen .sidebar header,
+  #superadmin-screen .sidebar header{
+    padding:22px 20px 18px;
+    border-bottom:1px solid var(--line);
+  }
+  #app-screen .tabs,
+  #superadmin-screen .tabs{
+    display:flex;
+    flex-direction:column;
+    gap:5px;
+    padding:18px 12px;
+    margin:0;
+    background:#fff;
+    border:0;
+    border-radius:0;
+  }
+  #app-screen .tab-btn,
+  #superadmin-screen .tab-btn{
+    flex:none;
+    width:100%;
+    text-align:left;
+    display:flex;
+    align-items:center;
+    justify-content:flex-start;
+    min-height:45px;
+    padding:11px 13px;
+    border-radius:11px;
+  }
+  #app-screen main,
+  #superadmin-screen main{
+    flex:1;
+    min-width:0;
+    max-width:none;
+    padding:30px 38px 70px;
+    background:
+      radial-gradient(circle at 80% 0%, rgba(22,163,74,.035), transparent 28rem),
+      var(--bg);
+  }
+  #app-screen .view,
+  #superadmin-screen .sa-view{
+    width:100%;
+    max-width:1450px;
+    margin:0 auto;
+    gap:24px;
+  }
 }
 .brand-left{gap:12px;}
 .brand-mark{
@@ -319,29 +362,9 @@ button:active{transform:translateY(1px);}
 .brand-title{font-size:17px;}
 .branch-tag{font-size:11.5px;color:#94A3B8;}
 
-/* ---------- sidebar nav ---------- */
-#app-screen .tabs,
-#superadmin-screen .tabs{
-  display:flex;
-  flex-direction:column;
-  gap:5px;
-  padding:18px 12px;
-  margin:0;
-  background:#fff;
-  border:0;
-  border-radius:0;
-}
+/* ---------- sidebar nav colors (safe at every width) ---------- */
 #app-screen .tab-btn,
 #superadmin-screen .tab-btn{
-  flex:none;
-  width:100%;
-  text-align:left;
-  display:flex;
-  align-items:center;
-  justify-content:flex-start;
-  min-height:45px;
-  padding:11px 13px;
-  border-radius:11px;
   color:#64748B;
   background:transparent;
   font-size:13px;
@@ -364,25 +387,6 @@ button:active{transform:translateY(1px);}
   width:36px;
   height:36px;
   border-radius:10px;
-}
-
-/* ---------- main ---------- */
-#app-screen main,
-#superadmin-screen main{
-  flex:1;
-  min-width:0;
-  max-width:none;
-  padding:30px 38px 70px;
-  background:
-    radial-gradient(circle at 80% 0%, rgba(22,163,74,.035), transparent 28rem),
-    var(--bg);
-}
-#app-screen .view,
-#superadmin-screen .sa-view{
-  width:100%;
-  max-width:1450px;
-  margin:0 auto;
-  gap:24px;
 }
 .page-header{
   margin-bottom:2px;
