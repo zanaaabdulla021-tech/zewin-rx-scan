@@ -1,0 +1,28 @@
+    <div id="sa-dashboard-view" class="sa-view active">
+      <div class="page-header">
+        <h2>Platform overview</h2>
+        <p>All companies, subscriptions, and activity across Rx Scan.</p>
+      </div>
+      <section>
+        <div class="stat-grid" id="sa-overview"></div>
+      </section>
+      <section style="display:grid;grid-template-columns:1fr;gap:16px;">
+        <div class="card">
+          <p class="section-label" style="margin:0 0 8px;">Organizations growth (last 12 months)</p>
+          <svg id="sa-chart-orgs" width="100%" height="1" style="display:block;"></svg>
+        </div>
+        <div class="card">
+          <p class="section-label" style="margin:0 0 8px;">Scans overview (last 12 months)</p>
+          <svg id="sa-chart-scans" width="100%" height="1" style="display:block;"></svg>
+        </div>
+      </section>
+      <section>
+        <p class="section-label">Recent organizations</p>
+        <div class="admin-list" id="sa-recent-companies"></div>
+      </section>
+      <section>
+        <p class="section-label">Pending branch approvals</p>
+        <div class="admin-list" id="sa-pending-branches"></div>
+      </section>
+    </div>
+

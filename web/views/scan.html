@@ -1,0 +1,73 @@
+    <div id="scan-view" class="view active">
+      <div class="page-header">
+        <h2>Scan a prescription</h2>
+        <p>Snap a photo and let AI read the doctor, medicines, and phone number.</p>
+      </div>
+      <section>
+        <p class="section-label">Prescription photo (you can add more than one)</p>
+        <div class="slip" id="dropzone">
+          <div class="slip-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8a2 2 0 012-2h1.5l1-1.5h7l1 1.5H18a2 2 0 012 2v10a2 2 0 01-2 2H6a2 2 0 01-2-2V8z"/><circle cx="12" cy="13" r="3.5"/></svg></div>
+          <p>Take or choose a photo to get started</p>
+          <div class="row-btns">
+            <button class="btn-primary" id="camera-btn" type="button">Take photo</button>
+            <button class="btn-ghost" id="gallery-btn" type="button">Choose file</button>
+          </div>
+          <input type="file" id="camera-input" accept="image/*" capture="environment">
+          <input type="file" id="gallery-input" accept="image/*" multiple>
+        </div>
+        <div id="preview-area" class="preview-wrap" style="display:none;">
+          <div id="preview-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;width:100%;"></div>
+          <div class="row-btns">
+            <button class="btn-ghost" id="add-more-btn" type="button">+ + Add another photo</button>
+          </div>
+          <div class="row-btns">
+            <button class="btn-primary" id="read-btn" type="button">Read with AI</button>
+            <button class="btn-ghost" id="retake-btn" type="button">Start over</button>
+          </div>
+        </div>
+        <div id="status-area"></div>
+      </section>
+
+      <section id="form-section" style="display:none;">
+        <p class="section-label">Review & Save</p>
+        <div class="card">
+          <div class="field">
+            <label for="f-category">Category</label>
+            <select id="f-category">
+              <option value="Medicine">Medicine</option>
+              <option value="Dairy">Dairy</option>
+              <option value="Beauty">Beauty</option>
+              <option value="Equipment">Equipment</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="f-source">Source</label>
+            <select id="f-source">
+              <option value="Private">Private</option>
+              <option value="Government">Government</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="f-doctor">Doctor's name</label>
+            <input type="text" id="f-doctor" placeholder="e.g. Dr. Aras Mohammed">
+          </div>
+          <div class="field">
+            <label for="f-phone">Phone number</label>
+            <input type="tel" id="f-phone" dir="ltr">
+          </div>
+          <div class="field">
+            <label style="display:flex;justify-content:space-between;align-items:center;">
+              <span>Items (<span id="med-count">0</span>)</span>
+              <button class="btn-ghost" type="button" id="add-med-btn" style="padding:6px 13px;font-size:12.5px;border-color:var(--brand-line);color:var(--brand-deep);">+ Add item</button>
+            </label>
+            <div id="med-list"></div>
+            <p class="med-disclaimer">Medicine information is AI-assisted and informational only — always verify against the prescription and your professional judgment.</p>
+          </div>
+        </div>
+        <button class="btn-stamp" id="save-btn" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg>
+          Save order
+        </button>
+      </section>
+    </div>
+

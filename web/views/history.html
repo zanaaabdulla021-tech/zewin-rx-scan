@@ -1,0 +1,15 @@
+    <div id="history-view" class="view">
+      <div class="page-header">
+        <h2>History</h2>
+        <p>Every prescription scanned, with its review status.</p>
+      </div>
+      <section>
+        <p class="section-label">Saved orders</p>
+        <input type="text" id="history-search" placeholder="Search by doctor, item, branch, employee..." style="font-family:inherit;font-size:14px;padding:11px 13px;border-radius:9px;border:1px solid var(--line);background:var(--card);color:var(--ink);">
+        <select id="history-branch-filter" style="display:none;margin-top:8px;font-family:inherit;font-size:13.5px;padding:9px 11px;border-radius:9px;border:1px solid var(--line);background:var(--card);color:var(--ink);">
+          <option value="">All branches</option>
+        </select>
+        <div id="history-list"><div class="empty-hist">No orders saved yet</div></div>
+      </section>
+    </div>
+

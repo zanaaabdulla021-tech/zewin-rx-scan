@@ -1,0 +1,359 @@
+/* =========================================================
+   RX SCAN — PROFILE / ACCOUNT PAGE
+   Premium multi-company profile UI
+   ========================================================= */
+
+#account-view{
+  max-width:1450px!important;
+}
+
+#account-view .page-header{
+  margin-bottom:20px;
+}
+
+#account-view .page-header h2{
+  font-size:30px;
+  letter-spacing:-.045em;
+}
+
+#account-view .account-hero{
+  display:grid!important;
+  grid-template-columns:360px 1fr;
+  gap:18px;
+  margin-bottom:18px;
+}
+
+/* Turn the existing profile header/card into a premium identity card */
+#account-view .account-profile-card{
+  position:relative;
+  overflow:hidden;
+  padding:25px!important;
+  border-radius:20px!important;
+  border:1px solid var(--line)!important;
+  background:linear-gradient(145deg,#fff 0%,#f9fffb 100%)!important;
+  box-shadow:var(--shadow-md)!important;
+}
+
+#account-view .account-profile-card:before{
+  content:"";
+  position:absolute;
+  width:170px;
+  height:170px;
+  right:-75px;
+  top:-80px;
+  border-radius:50%;
+  background:rgba(22,163,74,.065);
+}
+
+#account-view .account-avatar{
+  width:78px!important;
+  height:78px!important;
+  border-radius:24px!important;
+  border:1px solid #D9F6E2!important;
+  background:#ECFDF3!important;
+  box-shadow:0 8px 22px rgba(22,163,74,.12)!important;
+}
+
+#account-view .account-name{
+  font-size:21px!important;
+  letter-spacing:-.025em;
+}
+
+#account-view .account-meta{
+  color:#64748B!important;
+}
+
+/* Metric cards */
+#account-view .account-metrics{
+  display:grid!important;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:13px;
+}
+
+#account-view .account-metric{
+  min-height:126px;
+  padding:19px!important;
+  border-radius:17px!important;
+  border:1px solid var(--line)!important;
+  background:#fff!important;
+  box-shadow:var(--shadow-sm)!important;
+  position:relative;
+  overflow:hidden;
+}
+
+#account-view .account-metric:hover{
+  transform:translateY(-2px);
+  box-shadow:var(--shadow-md)!important;
+}
+
+#account-view .account-metric-icon{
+  width:39px!important;
+  height:39px!important;
+  border-radius:12px!important;
+  background:#F0FDF4!important;
+  border:1px solid #DCFCE7!important;
+}
+
+#account-view .account-metric-value{
+  font-size:27px!important;
+  font-weight:800!important;
+  letter-spacing:-.045em;
+}
+
+/* Profile navigation tabs */
+#account-view .profile-tabs{
+  display:flex!important;
+  gap:7px!important;
+  padding:6px!important;
+  margin:0 0 18px!important;
+  border:1px solid var(--line)!important;
+  border-radius:14px!important;
+  background:#fff!important;
+  box-shadow:var(--shadow-sm)!important;
+  overflow-x:auto;
+}
+
+#account-view .profile-tab{
+  white-space:nowrap;
+  min-height:40px!important;
+  padding:9px 15px!important;
+  border-radius:9px!important;
+  color:#64748B!important;
+  background:transparent!important;
+  border:0!important;
+  font-weight:650!important;
+}
+
+#account-view .profile-tab:hover{
+  background:#F8FAFC!important;
+  color:#0F172A!important;
+}
+
+#account-view .profile-tab.active{
+  color:#15803D!important;
+  background:#ECFDF3!important;
+  box-shadow:inset 0 0 0 1px #D1FAE5!important;
+}
+
+/* Main profile grid */
+#account-view .profile-content-grid{
+  display:grid!important;
+  grid-template-columns:minmax(0,1.25fr) minmax(340px,.75fr);
+  gap:18px;
+}
+
+/* Section cards */
+#account-view .profile-section{
+  border:1px solid var(--line)!important;
+  border-radius:18px!important;
+  background:#fff!important;
+  box-shadow:var(--shadow-sm)!important;
+  padding:21px!important;
+}
+
+#account-view .profile-section h3{
+  font-size:16px!important;
+  letter-spacing:-.02em;
+}
+
+#account-view .profile-section .section-description{
+  color:#64748B;
+  font-size:12.5px;
+}
+
+/* Companies */
+#account-view .company-grid{
+  display:grid!important;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:13px;
+}
+
+#account-view .company-card{
+  padding:17px!important;
+  border:1px solid var(--line)!important;
+  border-radius:15px!important;
+  background:linear-gradient(180deg,#fff,#fbfdfc)!important;
+  transition:transform .16s ease,box-shadow .16s ease,border-color .16s ease;
+}
+
+#account-view .company-card:hover{
+  transform:translateY(-2px);
+  border-color:#CFE8D7!important;
+  box-shadow:var(--shadow-md)!important;
+}
+
+#account-view .company-logo{
+  width:52px!important;
+  height:52px!important;
+  border-radius:14px!important;
+  border:1px solid #E1E8E3!important;
+  background:#F8FAF9!important;
+}
+
+#account-view .company-name{
+  font-size:15px!important;
+  font-weight:750!important;
+}
+
+#account-view .company-footer{
+  margin-top:15px!important;
+  padding-top:12px!important;
+  border-top:1px solid #EEF2F4!important;
+}
+
+/* Branch list */
+#account-view .branch-table{
+  overflow:hidden;
+  border:1px solid var(--line);
+  border-radius:14px;
+}
+
+#account-view .branch-table table{
+  width:100%;
+  border-collapse:collapse;
+}
+
+#account-view .branch-table th{
+  padding:12px 14px;
+  background:#F8FAFC;
+  color:#64748B;
+  font-size:10.5px;
+  text-transform:uppercase;
+  letter-spacing:.05em;
+  text-align:left;
+}
+
+#account-view .branch-table td{
+  padding:13px 14px;
+  border-top:1px solid #EEF2F5;
+  font-size:12.5px;
+}
+
+#account-view .branch-table tr:hover td{
+  background:#FAFFFC;
+}
+
+/* Role cards */
+#account-view .role-list{
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+
+#account-view .role-card{
+  display:grid;
+  grid-template-columns:1fr auto;
+  gap:12px;
+  align-items:center;
+  padding:14px;
+  border:1px solid var(--line);
+  border-radius:13px;
+  background:#fff;
+}
+
+#account-view .role-card:hover{
+  background:#FAFFFC;
+  border-color:#D5E8DB;
+}
+
+#account-view .permission-badge{
+  padding:5px 9px;
+  border-radius:999px;
+  font-size:10px;
+  font-weight:700;
+  background:#EFF6FF;
+  color:#2563EB;
+}
+
+/* Account settings blocks */
+#account-view .settings-row{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:20px;
+  padding:15px 0;
+  border-bottom:1px solid #EEF2F5;
+}
+
+#account-view .settings-row:last-child{
+  border-bottom:0;
+}
+
+#account-view .settings-title{
+  font-weight:700;
+  font-size:13px;
+}
+
+#account-view .settings-help{
+  margin-top:3px;
+  color:#64748B;
+  font-size:11.5px;
+}
+
+/* Upgrade card */
+#account-view .upgrade-card{
+  position:relative;
+  overflow:hidden;
+  border-radius:18px!important;
+  border:1px solid #DCEBFF!important;
+  background:linear-gradient(135deg,#F2F7FF,#F7FFFA)!important;
+  box-shadow:var(--shadow-sm)!important;
+}
+
+#account-view .upgrade-card:after{
+  content:"";
+  position:absolute;
+  width:150px;
+  height:150px;
+  right:-55px;
+  bottom:-70px;
+  border-radius:50%;
+  background:rgba(37,99,235,.06);
+}
+
+/* Hide old stacked key/value account rows if present and replace visually */
+#account-view .legacy-account-row{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  min-height:52px;
+  padding:0 15px;
+  margin-bottom:8px;
+  border:1px solid var(--line);
+  border-radius:12px;
+  background:#fff;
+}
+
+@media(max-width:1050px){
+  #account-view .account-hero{
+    grid-template-columns:1fr;
+  }
+  #account-view .account-metrics{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+  #account-view .profile-content-grid{
+    grid-template-columns:1fr;
+  }
+}
+
+@media(max-width:700px){
+  #account-view .page-header h2{font-size:24px;}
+  #account-view .account-metrics{
+    grid-template-columns:1fr 1fr;
+  }
+  #account-view .company-grid{
+    grid-template-columns:1fr;
+  }
+  #account-view .profile-section{
+    padding:16px!important;
+  }
+}
+
+@media(max-width:480px){
+  #account-view .account-metrics{
+    grid-template-columns:1fr;
+  }
+  #account-view .account-profile-card{
+    padding:20px!important;
+  }
+}

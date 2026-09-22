@@ -1,0 +1,86 @@
+    <div id="sa-companies-view" class="sa-view">
+      <div class="page-header" style="flex-direction:row;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:10px;">
+        <div>
+          <h2>All Pharmacies</h2>
+          <p>Manage all pharmacies registered on the Rx Scan platform.</p>
+        </div>
+        <button class="btn-primary" id="sa-show-create-btn" type="button">+ Add Pharmacy</button>
+      </div>
+      <section>
+        <input type="text" id="sa-company-search" placeholder="Search pharmacies by name, city, country..." style="font-family:inherit;font-size:14px;padding:11px 13px;border-radius:9px;border:1px solid var(--line);background:var(--card);color:var(--ink);">
+        <div style="overflow-x:auto;border:1px solid var(--line);border-radius:var(--radius);background:var(--card);">
+          <table id="sa-companies-table" style="width:100%;border-collapse:collapse;font-size:13px;white-space:nowrap;">
+            <thead>
+              <tr style="text-align:left;border-bottom:1px solid var(--line);">
+                <th style="padding:10px 12px;color:var(--ink-soft);font-weight:600;">Pharmacy</th>
+                <th style="padding:10px 12px;color:var(--ink-soft);font-weight:600;">Plan</th>
+                <th style="padding:10px 12px;color:var(--ink-soft);font-weight:600;">Status</th>
+                <th style="padding:10px 12px;color:var(--ink-soft);font-weight:600;">Location</th>
+                <th style="padding:10px 12px;color:var(--ink-soft);font-weight:600;">Branches</th>
+                <th style="padding:10px 12px;color:var(--ink-soft);font-weight:600;">Users</th>
+                <th style="padding:10px 12px;color:var(--ink-soft);font-weight:600;">Billing</th>
+                <th style="padding:10px 12px;color:var(--ink-soft);font-weight:600;">Expiry</th>
+                <th style="padding:10px 12px;color:var(--ink-soft);font-weight:600;">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="sa-companies-tbody"></tbody>
+          </table>
+        </div>
+      </section>
+      <section id="sa-create-section" style="display:none;">
+        <p class="section-label">Add a new pharmacy</p>
+        <div class="card">
+          <div class="field">
+            <label for="sa-new-name">Company / pharmacy name</label>
+            <input type="text" id="sa-new-name">
+          </div>
+          <div class="field">
+            <label for="sa-new-branch">First branch name</label>
+            <input type="text" id="sa-new-branch" placeholder="Main Branch">
+          </div>
+          <div class="field">
+            <label for="sa-new-admin-email">Admin email</label>
+            <input type="email" id="sa-new-admin-email" dir="ltr">
+          </div>
+          <div class="field">
+            <label for="sa-new-admin-password">Admin initial password</label>
+            <input type="text" id="sa-new-admin-password" dir="ltr">
+          </div>
+          <div class="field">
+            <label for="sa-new-phone">Phone (optional)</label>
+            <input type="text" id="sa-new-phone" dir="ltr">
+          </div>
+          <div class="field">
+            <label for="sa-new-email">Contact email (optional)</label>
+            <input type="email" id="sa-new-email" dir="ltr">
+          </div>
+          <div class="field">
+            <label for="sa-new-city">City (optional)</label>
+            <input type="text" id="sa-new-city">
+          </div>
+          <div class="field">
+            <label for="sa-new-country">Country (optional)</label>
+            <input type="text" id="sa-new-country">
+          </div>
+          <div class="field">
+            <label for="sa-new-plan">Plan</label>
+            <select id="sa-new-plan">
+              <option value="free">Free</option>
+              <option value="basic">Basic</option>
+              <option value="business">Business</option>
+              <option value="enterprise">Enterprise</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="sa-new-billing">Billing</label>
+            <select id="sa-new-billing">
+              <option value="monthly">Monthly ($10/branch)</option>
+              <option value="yearly">Yearly ($100/branch)</option>
+            </select>
+          </div>
+          <button class="btn-primary" id="sa-create-btn" style="align-self:flex-start;">Create company</button>
+          <div id="sa-create-msg"></div>
+        </div>
+      </section>
+    </div>
+

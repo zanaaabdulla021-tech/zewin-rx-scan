@@ -1,0 +1,519 @@
+/* =========================================================
+   RX SCAN — PREMIUM SAAS REDESIGN
+   Visual layer only: existing HTML/JS/API behavior preserved.
+   ========================================================= */
+
+:root{
+  --brand:#16A34A;
+  --brand-deep:#15803D;
+  --brand-soft:#ECFDF3;
+  --brand-line:#BBF7D0;
+  --bg:#F6F8FB;
+  --card:#FFFFFF;
+  --ink:#0B1220;
+  --ink-soft:#64748B;
+  --line:#E5EAF0;
+  --line-strong:#D7DEE8;
+  --success:#16A34A;
+  --warning:#D97706;
+  --danger:#DC2626;
+  --info:#2563EB;
+  --shadow-sm:0 1px 2px rgba(15,23,42,.04);
+  --shadow-md:0 12px 30px rgba(15,23,42,.07);
+  --shadow-lg:0 22px 60px rgba(15,23,42,.10);
+  --radius:16px;
+}
+
+/* ---------- global ---------- */
+html,body{
+  background:
+    radial-gradient(circle at 85% 0%, rgba(22,163,74,.055), transparent 26rem),
+    var(--bg);
+  color:var(--ink);
+}
+body{
+  display:block;
+  min-height:100vh;
+}
+button,input,select,textarea{font-family:'Vazirmatn',sans-serif;}
+button{transition:transform .16s ease,box-shadow .16s ease,background .16s ease,border-color .16s ease;}
+button:active{transform:translateY(1px);}
+
+/* ---------- login ---------- */
+.login-wrap{
+  min-height:100vh;
+  background:
+    radial-gradient(circle at 10% 10%, rgba(22,163,74,.12), transparent 25rem),
+    radial-gradient(circle at 90% 90%, rgba(37,99,235,.08), transparent 24rem),
+    #F7FAF8;
+}
+.login-card{
+  max-width:430px;
+  padding:38px;
+  border:1px solid rgba(226,232,240,.9);
+  border-radius:24px;
+  box-shadow:var(--shadow-lg);
+  background:rgba(255,255,255,.94);
+  backdrop-filter:blur(18px);
+}
+.login-card h1{font-size:25px;}
+.login-card .sub{font-size:13.5px;margin-bottom:26px;}
+.login-card .btn-primary{width:100%;padding:13px 18px;border-radius:12px;}
+
+/* ---------- application shell (desktop layout only — mobile uses the
+   base stacked layout from the main stylesheet) ---------- */
+@media (min-width: 900px){
+  #app-screen.shell,
+  #superadmin-screen.shell{
+    width:100%;
+    max-width:none;
+    min-height:100vh;
+    margin:0;
+    display:flex;
+    flex-direction:row;
+    background:var(--bg);
+  }
+  #app-screen .sidebar,
+  #superadmin-screen .sidebar{
+    width:272px;
+    min-width:272px;
+    min-height:100vh;
+    position:sticky;
+    top:0;
+    height:100vh;
+    background:#FFFFFF;
+    border-right:1px solid var(--line);
+    box-shadow:8px 0 30px rgba(15,23,42,.025);
+    z-index:20;
+  }
+  #app-screen .sidebar header,
+  #superadmin-screen .sidebar header{
+    padding:22px 20px 18px;
+    border-bottom:1px solid var(--line);
+  }
+  #app-screen .tabs,
+  #superadmin-screen .tabs{
+    display:flex;
+    flex-direction:column;
+    gap:5px;
+    padding:18px 12px;
+    margin:0;
+    background:#fff;
+    border:0;
+    border-radius:0;
+  }
+  #app-screen .tab-btn,
+  #superadmin-screen .tab-btn{
+    flex:none;
+    width:100%;
+    text-align:left;
+    display:flex;
+    align-items:center;
+    justify-content:flex-start;
+    min-height:45px;
+    padding:11px 13px;
+    border-radius:11px;
+  }
+  #app-screen main,
+  #superadmin-screen main{
+    flex:1;
+    min-width:0;
+    max-width:none;
+    padding:30px 38px 70px;
+    background:
+      radial-gradient(circle at 80% 0%, rgba(22,163,74,.035), transparent 28rem),
+      var(--bg);
+  }
+  #app-screen .view,
+  #superadmin-screen .sa-view{
+    width:100%;
+    max-width:1450px;
+    margin:0 auto;
+    gap:24px;
+  }
+}
+.brand-left{gap:12px;}
+.brand-mark{
+  width:42px!important;
+  height:42px!important;
+  border-radius:13px!important;
+  background:#F0FDF4;
+  border:1px solid #DCFCE7;
+  box-shadow:0 5px 16px rgba(22,163,74,.10)!important;
+}
+.brand-title{font-size:17px;}
+.branch-tag{font-size:11.5px;color:#94A3B8;}
+
+/* ---------- sidebar nav colors (safe at every width) ---------- */
+#app-screen .tab-btn,
+#superadmin-screen .tab-btn{
+  color:#64748B;
+  background:transparent;
+  font-size:13px;
+  font-weight:650;
+}
+#app-screen .tab-btn:hover,
+#superadmin-screen .tab-btn:hover{
+  background:#F8FAFC;
+  color:#0F172A;
+}
+#app-screen .tab-btn.active,
+#superadmin-screen .tab-btn.active{
+  color:#15803D;
+  background:#ECFDF3;
+  box-shadow:inset 3px 0 0 #16A34A;
+}
+#app-screen .logout-btn,
+#superadmin-screen .icon-btn{
+  margin-left:auto;
+  width:36px;
+  height:36px;
+  border-radius:10px;
+}
+.page-header{
+  margin-bottom:2px;
+}
+.page-header h2{
+  font-size:26px;
+  letter-spacing:-.035em;
+  line-height:1.2;
+}
+.page-header p{
+  margin-top:7px;
+  font-size:13.5px;
+  color:#718096;
+}
+
+/* ---------- cards ---------- */
+.card,
+.stat-card,
+.history-item,
+.admin-row,
+#sa-companies-table,
+#sa-companies-view section > div[style*="overflow-x:auto"]{
+  border-color:var(--line);
+  box-shadow:var(--shadow-sm);
+}
+.card{
+  border-radius:16px;
+  padding:20px;
+}
+.card:hover{
+  box-shadow:0 8px 26px rgba(15,23,42,.055);
+}
+
+/* ---------- stats ---------- */
+.stat-grid{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:15px;
+}
+.stat-card{
+  min-height:132px;
+  position:relative;
+  overflow:hidden;
+  padding:18px;
+  border-radius:17px;
+  background:#fff;
+}
+.stat-card::after{
+  content:"";
+  position:absolute;
+  width:90px;
+  height:90px;
+  border-radius:50%;
+  right:-35px;
+  top:-35px;
+  background:rgba(22,163,74,.045);
+}
+.stat-card .stat-icon{
+  width:38px;
+  height:38px;
+  border-radius:11px;
+  background:#ECFDF3;
+  border:1px solid #DCFCE7;
+}
+.stat-card .stat-value{
+  font-size:27px;
+  letter-spacing:-.045em;
+}
+.stat-card .stat-label{
+  font-size:11.5px;
+}
+
+/* ---------- scan hero ---------- */
+.slip{
+  min-height:300px;
+  padding:34px;
+  border:1.5px dashed #C9D4DF;
+  border-radius:20px;
+  background:
+    linear-gradient(180deg,#FFFFFF,#FBFEFC);
+  box-shadow:var(--shadow-sm);
+}
+.slip:hover{
+  border-color:#86EFAC;
+  box-shadow:0 12px 34px rgba(22,163,74,.07);
+}
+.slip-icon{
+  width:68px;
+  height:68px;
+  border-radius:20px;
+  background:#ECFDF3;
+  border:1px solid #BBF7D0;
+}
+.slip-icon svg{width:29px;height:29px;}
+.slip p{max-width:42ch;font-size:14px;}
+.btn-primary{
+  background:linear-gradient(180deg,#22C55E,#16A34A);
+  border-radius:11px;
+  padding:12px 18px;
+  box-shadow:0 7px 18px rgba(22,163,74,.18);
+}
+.btn-primary:hover:not(:disabled){
+  background:linear-gradient(180deg,#16A34A,#15803D);
+  box-shadow:0 10px 22px rgba(22,163,74,.22);
+  transform:translateY(-1px);
+}
+.btn-ghost{
+  border-radius:10px;
+  background:#fff;
+}
+
+/* ---------- forms ---------- */
+.field{gap:7px;}
+.field label{font-size:12px;color:#64748B;}
+.field input,.field select{
+  min-height:43px;
+  border-radius:11px;
+  border-color:#DCE3EB;
+  background:#fff;
+}
+.field input:hover,.field select:hover{border-color:#C7D2DE;}
+.field input:focus,.field select:focus{
+  border-color:#22C55E;
+  box-shadow:0 0 0 4px rgba(34,197,94,.10);
+}
+
+/* ---------- tables ---------- */
+#sa-companies-table{
+  overflow:hidden;
+  border-radius:17px;
+  border-collapse:separate!important;
+  border-spacing:0;
+}
+#sa-companies-table thead{
+  background:#F8FAFC;
+}
+#sa-companies-table th{
+  padding:13px 15px!important;
+  font-size:11px!important;
+  text-transform:uppercase;
+  letter-spacing:.045em;
+  color:#64748B!important;
+}
+#sa-companies-table td{
+  padding:14px 15px!important;
+  border-bottom:1px solid #EEF2F6;
+  color:#334155;
+}
+#sa-companies-table tbody tr{
+  transition:background .15s ease;
+}
+#sa-companies-table tbody tr:hover{
+  background:#F8FFFA;
+}
+#sa-companies-table tbody tr:last-child td{border-bottom:0;}
+
+/* search */
+#sa-company-search{
+  width:100%;
+  min-height:45px;
+  padding-left:15px!important;
+  border-radius:12px!important;
+  background:#fff!important;
+  box-shadow:var(--shadow-sm);
+}
+#sa-company-search:focus{
+  outline:none;
+  border-color:#22C55E!important;
+  box-shadow:0 0 0 4px rgba(34,197,94,.09)!important;
+}
+
+/* ---------- lists ---------- */
+.admin-list{gap:10px;}
+.admin-row{
+  border-radius:13px;
+  padding:13px 15px;
+  background:#fff;
+}
+.admin-row:hover{
+  border-color:#D5E6DA;
+  background:#FCFFFD;
+}
+
+/* ---------- badges ---------- */
+.status-badge{
+  padding:5px 10px;
+  font-size:10.5px;
+  border-radius:999px;
+  letter-spacing:.01em;
+}
+
+/* ---------- activity/payment sections ---------- */
+#sa-payments-view .admin-list,
+#sa-activity-view .admin-list,
+#sa-admins-view .card{
+  max-width:100%;
+}
+#sa-payments-view .admin-row,
+#sa-activity-view .admin-row{
+  min-height:60px;
+}
+
+/* ---------- section labels ---------- */
+.section-label{
+  color:#64748B;
+  font-size:11px;
+  letter-spacing:.08em;
+}
+
+/* ---------- notification panel ---------- */
+#notif-panel{
+  top:76px!important;
+  right:24px!important;
+  left:auto!important;
+  max-width:390px!important;
+  border:1px solid var(--line);
+  background:#fff!important;
+  box-shadow:var(--shadow-lg)!important;
+  border-radius:18px!important;
+}
+
+/* ---------- toast ---------- */
+.toast{
+  bottom:28px;
+  padding:12px 18px;
+  border-radius:12px;
+  box-shadow:var(--shadow-lg);
+}
+
+/* ---------- mobile ---------- */
+@media (max-width: 899px){
+  #app-screen.shell,
+  #superadmin-screen.shell{
+    display:block!important;
+    max-width:100%!important;
+  }
+  #app-screen .sidebar,
+  #superadmin-screen .sidebar{
+    width:100%!important;
+    min-width:0!important;
+    height:auto!important;
+    min-height:0!important;
+    position:sticky;
+    top:0;
+    z-index:30;
+    border-right:0;
+    border-bottom:1px solid var(--line);
+    box-shadow:0 2px 8px rgba(15,23,42,.04);
+  }
+  #app-screen .sidebar header,
+  #superadmin-screen .sidebar header{
+    padding:14px 16px 10px;
+  }
+  #app-screen .brandrow,
+  #superadmin-screen .brandrow{
+    flex-direction:row!important;
+    align-items:center!important;
+    gap:10px!important;
+  }
+  #app-screen .tabs,
+  #superadmin-screen .tabs{
+    flex-direction:row;
+    overflow-x:auto;
+    -webkit-overflow-scrolling:touch;
+    padding:8px 12px 10px;
+    gap:6px;
+    scrollbar-width:none;
+  }
+  #app-screen .tabs::-webkit-scrollbar,
+  #superadmin-screen .tabs::-webkit-scrollbar{
+    display:none;
+  }
+  #app-screen .tab-btn,
+  #superadmin-screen .tab-btn{
+    width:auto;
+    min-width:max-content;
+    min-height:40px;
+    padding:9px 15px;
+    border-radius:999px;
+    text-align:center;
+  }
+  #app-screen .tab-btn.active,
+  #superadmin-screen .tab-btn.active{
+    box-shadow:none;
+  }
+  #app-screen main,
+  #superadmin-screen main{
+    max-width:100%!important;
+    width:100%!important;
+    flex:none!important;
+    padding:18px 14px 90px;
+    box-sizing:border-box;
+  }
+  #app-screen .view,
+  #superadmin-screen .sa-view{
+    max-width:100%!important;
+    margin:0!important;
+    width:100%!important;
+  }
+  .stat-grid{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:10px;
+  }
+  .stat-card{
+    min-height:115px;
+    padding:14px;
+  }
+  .card{
+    padding:15px;
+  }
+  .med-card{
+    padding:14px;
+  }
+  .med-card-icon{
+    width:52px;
+    height:52px;
+  }
+  .branch-card{
+    padding:14px;
+  }
+  #sa-companies-view section > div[style*="overflow-x:auto"]{
+    -webkit-overflow-scrolling:touch;
+    box-shadow:inset -14px 0 12px -14px rgba(15,23,42,.08);
+  }
+  #sa-companies-table{
+    font-size:12px;
+  }
+  .page-header h2{font-size:22px;}
+  .slip{padding:28px 18px;min-height:270px;}
+  .row-btns{flex-direction:column;align-items:stretch;}
+  .row-btns .btn-primary,
+  .row-btns .btn-ghost,
+  .row-btns .btn-stamp{width:100%;text-align:center;justify-content:center;}
+  #preview-grid{grid-template-columns:repeat(3,1fr)!important;}
+  .med-card-header{flex-wrap:wrap;}
+}
+@media (max-width: 400px){
+  #preview-grid{grid-template-columns:repeat(2,1fr)!important;}
+  .med-card-icon{width:46px;height:46px;}
+  .med-card-title{min-width:0;}
+  .med-name-input{font-size:15px;}
+}
+@media (max-width: 520px){
+  .login-card{padding:28px 20px;border-radius:20px;}
+  .stat-grid{grid-template-columns:1fr 1fr;}
+  .stat-card .stat-value{font-size:23px;}
+  .card{padding:16px;}
+}
