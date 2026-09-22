@@ -1,4 +1,4 @@
-    <div id="scan-view" class="view active">
+    <div id="scan-view" class="view" :class="{ active: activeView === 'scan-view' }">
       <div class="page-header">
         <h2>Scan a prescription</h2>
         <p>Snap a photo and let AI read the doctor, medicines, and phone number.</p>
