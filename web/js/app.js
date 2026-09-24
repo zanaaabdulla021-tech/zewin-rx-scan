@@ -5,7 +5,7 @@
   // markup physically lives).
   async function loadViewFragments(){
     const appViews = ['scan', 'history', 'reports', 'admin', 'account'];
-    const saViews = ['sa-dashboard', 'sa-pharmacies', 'sa-company-detail', 'sa-payments', 'sa-activity', 'sa-admins'];
+    const saViews = ['sa-dashboard', 'sa-pharmacies', 'sa-company-detail', 'sa-payments', 'sa-activity', 'sa-admins', 'sa-modules'];
     const [appHtml, saHtml] = await Promise.all([
       Promise.all(appViews.map(v => fetch('views/' + v + '.html').then(r => r.text()))),
       Promise.all(saViews.map(v => fetch('views/' + v + '.html').then(r => r.text()))),
@@ -250,6 +250,8 @@
       await loadSuperAdminActivityLog();
       await loadSuperAdminPayments();
       await loadPendingBranches();
+      await loadModules();
+      await loadAdminsList();
       return;
     }
     appScreen.style.display = 'flex';
@@ -483,6 +485,551 @@
     } catch(e){}
   }
 
+  // ---------------------------------------------------- module builder —
+  // phase 1: create / list / open / delete module records. The Code editor
+  // and Studio canvas that actually fill in a module's definition come later.
+  let selectedModuleMethod = null;
+
+  async function loadModules(){
+    try{
+      const modules = await api('/api/superadmin/modules');
+      $('module-list').innerHTML = modules.map(m => (
+        '<div class="branch-card">'+
+          '<div class="branch-card-head">'+
+            '<div class="name">'+(m.creationMethod === 'code' ? '💻' : '🎨')+' '+escapeHtml(m.name)+'</div>'+
+            '<span class="status-badge '+(m.status==='published'?'approved':(m.status==='draft'?'pending':'pending'))+'">'+m.status+'</span>'+
+          '</div>'+
+          (m.description ? '<p class="meta" style="margin:0;">'+escapeHtml(m.description)+'</p>' : '')+
+          '<div style="display:flex;gap:8px;">'+
+            '<button class="btn-ghost" type="button" data-open-module="'+m.id+'" style="flex:1;">Open</button>'+
+            '<button class="del-btn" type="button" data-delete-module="'+m.id+'">Delete</button>'+
+          '</div>'+
+        '</div>'
+      )).join('') || '<div class="empty-hist">No modules yet — create your first one above</div>';
+      $('module-list').querySelectorAll('[data-open-module]').forEach(btn => {
+        btn.addEventListener('click', () => openModuleDetail(Number(btn.dataset.openModule)));
+      });
+      $('module-list').querySelectorAll('[data-delete-module]').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const ok = await showConfirm('Delete this module? This cannot be undone.', {title: 'Delete module?'});
+          if (!ok) return;
+          try{
+            await api('/api/superadmin/modules/'+btn.dataset.deleteModule, {method:'DELETE'});
+            showToast('Module deleted', 'success');
+            await loadModules();
+          } catch(e){
+            showToast('Could not delete the module', 'error');
+          }
+        });
+      });
+    } catch(e){
+      $('module-list').innerHTML = '<div class="empty-hist">Could not load modules</div>';
+    }
+  }
+
+  async function openModuleDetail(id){
+    $('module-detail-section').style.display = 'flex';
+    $('module-detail-section').style.flexDirection = 'column';
+    $('module-detail-name').textContent = 'Loading...';
+    $('module-code-workspace').style.display = 'none';
+    $('module-studio-workspace').style.display = 'none';
+    $('module-versions-panel').style.display = 'none';
+    try{
+      currentModule = await api('/api/superadmin/modules/'+id);
+      $('module-detail-name').textContent = (currentModule.creationMethod === 'code' ? '💻 ' : '🎨 ') + currentModule.name;
+      $('module-detail-meta').textContent = 'Status: '+currentModule.status+' · Created by '+(currentModule.createdBy||'—')+' · '+new Date(currentModule.createdAt).toLocaleString();
+      renderModuleStatusPipeline();
+      $('module-detail-section').scrollIntoView({behavior:'smooth', block:'start'});
+      if (currentModule.creationMethod === 'code'){
+        $('module-code-workspace').style.display = 'block';
+        if (!currentModule.definition.files) currentModule.definition.files = [];
+        renderModuleFileList();
+        if (currentModule.definition.files.length){
+          openModuleFile(currentModule.definition.files[0].path);
+        } else {
+          currentModuleFilePath = null;
+          $('module-current-file-name').textContent = 'No file selected';
+          $('module-save-file-btn').disabled = true;
+          $('module-delete-file-btn').style.display = 'none';
+          getModuleEditor().setValue('// Click "+ New" to create your first file');
+        }
+      } else {
+        $('module-studio-workspace').style.display = 'block';
+        if (!currentModule.definition.components) currentModule.definition.components = [];
+        studioSelectedId = null;
+        renderStudioCanvas();
+        renderStudioProperties();
+      }
+    } catch(e){
+      $('module-detail-name').textContent = 'Could not load this module';
+    }
+  }
+  const MODULE_STATUS_ORDER = ['draft', 'preview', 'testing', 'approved', 'published'];
+  const MODULE_STATUS_LABELS = { draft: 'Draft', preview: 'Preview', testing: 'Testing', approved: 'Approved', published: 'Published' };
+
+  function renderModuleStatusPipeline(){
+    const current = currentModule.status;
+    const currentIdx = MODULE_STATUS_ORDER.indexOf(current);
+    $('module-status-pipeline').innerHTML = MODULE_STATUS_ORDER.map((s, i) => (
+      '<span class="status-badge '+(i <= currentIdx ? 'approved' : 'pending')+'" style="margin-right:4px;'+(s===current?'box-shadow:0 0 0 2px var(--brand);':'')+'">'+MODULE_STATUS_LABELS[s]+'</span>'+
+      (i < MODULE_STATUS_ORDER.length-1 ? '<span style="color:var(--ink-soft);">→</span> ' : '')
+    )).join('');
+    document.querySelectorAll('[data-set-status]').forEach(btn => {
+      btn.disabled = btn.dataset.setStatus === current;
+      btn.style.opacity = btn.disabled ? '0.5' : '1';
+    });
+  }
+
+  document.querySelectorAll('[data-set-status]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const status = btn.dataset.setStatus;
+      const label = status === 'published' ? 'Publish this module? It will be marked live.' : 'Move this module to "'+MODULE_STATUS_LABELS[status]+'"?';
+      const ok = await showConfirm(label, {title: 'Change status?', okLabel: status === 'published' ? 'Publish' : 'Confirm'});
+      if (!ok) return;
+      try{
+        currentModule = await api('/api/superadmin/modules/'+currentModule.id+'/status', {method:'POST', body: JSON.stringify({status})});
+        $('module-detail-meta').textContent = 'Status: '+currentModule.status+' · Created by '+(currentModule.createdBy||'—')+' · '+new Date(currentModule.createdAt).toLocaleString();
+        renderModuleStatusPipeline();
+        showToast(status === 'published' ? 'Module published' : 'Status updated', 'success');
+        await loadModules();
+      } catch(e){
+        showToast('Could not change status', 'error');
+      }
+    });
+  });
+
+  $('module-detail-back-btn').addEventListener('click', () => {
+    $('module-detail-section').style.display = 'none';
+  });
+
+  let currentModule = null;
+  let currentModuleFilePath = null;
+  let moduleEditorInstance = null;
+
+  function getModuleEditor(){
+    if (!moduleEditorInstance){
+      moduleEditorInstance = CodeMirror(document.getElementById('module-editor-host'), {
+        value: '',
+        theme: 'dracula',
+        lineNumbers: true,
+        mode: 'javascript',
+        viewportMargin: Infinity,
+      });
+      moduleEditorInstance.on('change', () => {
+        if (currentModuleFilePath) $('module-save-file-btn').disabled = false;
+      });
+    }
+    return moduleEditorInstance;
+  }
+
+  function cmModeForPath(path){
+    if (/\.html?$/.test(path)) return 'htmlmixed';
+    if (/\.css$/.test(path)) return 'css';
+    return 'javascript';
+  }
+
+  function renderModuleFileList(){
+    const files = currentModule.definition.files || [];
+    $('module-file-list').innerHTML = files.map(f => (
+      '<div class="admin-row" data-file-path="'+escapeAttr(f.path)+'" style="cursor:pointer;padding:8px 10px;'+(f.path===currentModuleFilePath?'background:var(--brand-tint);':'')+'"><span style="font-size:12.5px;">'+escapeHtml(f.path)+'</span></div>'
+    )).join('') || '<div class="empty-hist" style="font-size:12px;">No files yet</div>';
+    $('module-file-list').querySelectorAll('[data-file-path]').forEach(row => {
+      row.addEventListener('click', () => openModuleFile(row.dataset.filePath));
+    });
+  }
+
+  function openModuleFile(path){
+    const file = (currentModule.definition.files || []).find(f => f.path === path);
+    if (!file) return;
+    currentModuleFilePath = path;
+    const editor = getModuleEditor();
+    editor.setOption('mode', cmModeForPath(path));
+    editor.setValue(file.content || '');
+    $('module-current-file-name').textContent = path;
+    $('module-save-file-btn').disabled = true;
+    $('module-delete-file-btn').style.display = 'inline-flex';
+    renderModuleFileList();
+  }
+
+  $('module-new-file-btn').addEventListener('click', () => {
+    const path = prompt('File name (e.g. index.js, view.html):');
+    if (!path || !path.trim()) return;
+    const clean = path.trim();
+    if (!currentModule.definition.files) currentModule.definition.files = [];
+    if (currentModule.definition.files.some(f => f.path === clean)){
+      showToast('A file with that name already exists', 'error');
+      return;
+    }
+    currentModule.definition.files.push({ path: clean, content: '' });
+    renderModuleFileList();
+    openModuleFile(clean);
+    getModuleEditor().focus();
+  });
+
+  $('module-save-file-btn').addEventListener('click', async () => {
+    if (!currentModuleFilePath) return;
+    const file = currentModule.definition.files.find(f => f.path === currentModuleFilePath);
+    if (file) file.content = getModuleEditor().getValue();
+    $('module-save-file-btn').disabled = true;
+    $('module-save-msg').innerHTML = '<div class="admin-row" style="color:var(--ink-soft);">Saving...</div>';
+    try{
+      currentModule = await api('/api/superadmin/modules/'+currentModule.id, {
+        method:'PATCH',
+        body: JSON.stringify({ definition: currentModule.definition }),
+      });
+      $('module-save-msg').innerHTML = '<div class="admin-row" style="color:#016E51;">Saved</div>';
+      setTimeout(() => { $('module-save-msg').innerHTML = ''; }, 2000);
+    } catch(e){
+      $('module-save-msg').innerHTML = '<div class="admin-row" style="color:#8C2C20;">Could not save</div>';
+      $('module-save-file-btn').disabled = false;
+    }
+  });
+
+  $('module-delete-file-btn').addEventListener('click', async () => {
+    if (!currentModuleFilePath) return;
+    const ok = await showConfirm('Delete "'+currentModuleFilePath+'"? This cannot be undone.', {title: 'Delete file?'});
+    if (!ok) return;
+    currentModule.definition.files = currentModule.definition.files.filter(f => f.path !== currentModuleFilePath);
+    try{
+      currentModule = await api('/api/superadmin/modules/'+currentModule.id, {
+        method:'PATCH',
+        body: JSON.stringify({ definition: currentModule.definition }),
+      });
+      showToast('File deleted', 'success');
+    } catch(e){
+      showToast('Could not delete the file', 'error');
+    }
+    if (currentModule.definition.files.length){
+      openModuleFile(currentModule.definition.files[0].path);
+    } else {
+      currentModuleFilePath = null;
+      $('module-current-file-name').textContent = 'No file selected';
+      $('module-save-file-btn').disabled = true;
+      $('module-delete-file-btn').style.display = 'none';
+      getModuleEditor().setValue('// Click "+ New" to create your first file');
+      renderModuleFileList();
+    }
+  });
+
+  // ---- AI Assistant inside Code Mode — always a suggestion, never saved
+  // or applied automatically. The developer reviews it and, if they want
+  // it, clicks "Replace file with this" themselves. ----
+  let selectedAiAction = 'generate';
+  document.querySelectorAll('[data-ai-action]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      selectedAiAction = btn.dataset.aiAction;
+      document.querySelectorAll('[data-ai-action]').forEach(b => { b.style.borderColor = 'var(--line)'; b.style.color = 'var(--ink-soft)'; });
+      btn.style.borderColor = 'var(--brand)';
+      btn.style.color = 'var(--brand-deep)';
+    });
+  });
+
+  $('module-ai-run-btn').addEventListener('click', async () => {
+    if (!currentModule || currentModule.creationMethod !== 'code'){
+      showToast('Open a Code module first', 'error');
+      return;
+    }
+    const instruction = $('module-ai-instruction').value.trim();
+    const btn = $('module-ai-run-btn');
+    btn.disabled = true;
+    btn.textContent = 'Thinking...';
+    $('module-ai-result').style.display = 'none';
+    try{
+      const result = await api('/api/superadmin/modules/'+currentModule.id+'/ai', {
+        method:'POST',
+        body: JSON.stringify({
+          action: selectedAiAction,
+          instruction,
+          filePath: currentModuleFilePath,
+          fileContent: currentModuleFilePath ? getModuleEditor().getValue() : '',
+        }),
+      });
+      $('module-ai-output').textContent = result.result;
+      $('module-ai-result').style.display = 'flex';
+      $('module-ai-apply-btn').style.display = (selectedAiAction === 'explain') ? 'none' : 'block';
+    } catch(e){
+      showToast('AI assistant is unavailable right now', 'error');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Ask AI';
+    }
+  });
+
+  $('module-ai-apply-btn').addEventListener('click', () => {
+    if (!currentModuleFilePath){
+      showToast('Select or create a file first', 'error');
+      return;
+    }
+    getModuleEditor().setValue($('module-ai-output').textContent);
+    $('module-save-file-btn').disabled = false;
+    showToast('Applied to editor — click Save to keep it', 'info');
+  });
+
+  // ---- Version history — save a snapshot, view the list, restore one.
+  $('module-versions-btn').addEventListener('click', async () => {
+    $('module-versions-panel').style.display = 'block';
+    await loadModuleVersions();
+    $('module-versions-panel').scrollIntoView({behavior:'smooth', block:'start'});
+  });
+  $('module-versions-close-btn').addEventListener('click', () => {
+    $('module-versions-panel').style.display = 'none';
+  });
+
+  async function loadModuleVersions(){
+    try{
+      const versions = await api('/api/superadmin/modules/'+currentModule.id+'/versions');
+      $('module-version-list').innerHTML = versions.map(v => (
+        '<div class="admin-row" style="flex-direction:column;align-items:stretch;gap:4px;">'+
+          '<div style="display:flex;justify-content:space-between;"><b>v'+v.versionNumber+'</b><span class="meta">'+new Date(v.createdAt).toLocaleString()+'</span></div>'+
+          (v.note ? '<span class="meta">'+escapeHtml(v.note)+'</span>' : '')+
+          '<span class="meta">by '+escapeHtml(v.createdBy||'—')+'</span>'+
+          '<div style="display:flex;gap:8px;">'+
+            '<button class="btn-ghost" type="button" data-view-version="'+v.id+'" style="padding:5px 10px;font-size:11.5px;">View</button>'+
+            '<button class="approve-btn" type="button" data-restore-version="'+v.id+'">Restore</button>'+
+          '</div>'+
+        '</div>'
+      )).join('') || '<div class="empty-hist">No versions saved yet</div>';
+      $('module-version-list').querySelectorAll('[data-view-version]').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          try{
+            const v = await api('/api/superadmin/modules/'+currentModule.id+'/versions/'+btn.dataset.viewVersion);
+            const preview = JSON.stringify(v.definition, null, 2);
+            alert('v'+v.versionNumber+' definition:\n\n'+preview.slice(0, 2000)+(preview.length>2000?'\n... (truncated)':''));
+          } catch(e){ showToast('Could not load that version', 'error'); }
+        });
+      });
+      $('module-version-list').querySelectorAll('[data-restore-version]').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const ok = await showConfirm('Restore this version? Your current state will be auto-saved as a new version first.', {title: 'Restore version?', okLabel: 'Restore'});
+          if (!ok) return;
+          try{
+            currentModule = await api('/api/superadmin/modules/'+currentModule.id+'/versions/'+btn.dataset.restoreVersion+'/restore', {method:'POST'});
+            showToast('Version restored', 'success');
+            renderModuleFileList();
+            if (currentModule.definition.files && currentModule.definition.files.length){
+              openModuleFile(currentModule.definition.files[0].path);
+            }
+            await loadModuleVersions();
+          } catch(e){ showToast('Could not restore that version', 'error'); }
+        });
+      });
+    } catch(e){
+      $('module-version-list').innerHTML = '<div class="empty-hist">Could not load versions</div>';
+    }
+  }
+
+  $('module-save-version-btn').addEventListener('click', async () => {
+    const note = $('module-version-note').value.trim();
+    try{
+      await api('/api/superadmin/modules/'+currentModule.id+'/versions', {method:'POST', body: JSON.stringify({ note })});
+      $('module-version-note').value = '';
+      showToast('Version saved', 'success');
+      await loadModuleVersions();
+    } catch(e){
+      showToast('Could not save a version', 'error');
+    }
+  });
+
+  // ---- Studio Mode — a real (if intentionally small) drag-and-drop
+  // canvas. Components live in currentModule.definition.components, the
+  // same structured-data shape Code Mode's files live alongside.
+  const STUDIO_LABELS = {
+    container: 'Container', row: 'Row', text: 'Text field', number: 'Number field',
+    select: 'Select', checkbox: 'Checkbox', table: 'Table', button: 'Button',
+  };
+  let studioSelectedId = null;
+  let studioIdCounter = 1;
+
+  document.querySelectorAll('.studio-palette-item').forEach(item => {
+    item.addEventListener('dragstart', (e) => {
+      e.dataTransfer.setData('text/plain', item.dataset.compType);
+    });
+  });
+
+  const studioCanvas = document.getElementById('studio-canvas');
+  studioCanvas.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    studioCanvas.classList.add('drag-over');
+  });
+  studioCanvas.addEventListener('dragleave', () => studioCanvas.classList.remove('drag-over'));
+  studioCanvas.addEventListener('drop', (e) => {
+    e.preventDefault();
+    studioCanvas.classList.remove('drag-over');
+    const type = e.dataTransfer.getData('text/plain');
+    if (!type || !STUDIO_LABELS[type]) return;
+    const comp = {
+      id: 'c' + (studioIdCounter++) + '_' + Date.now(),
+      type,
+      label: STUDIO_LABELS[type],
+      binding: '',
+      options: type === 'select' ? ['Option 1', 'Option 2'] : undefined,
+    };
+    currentModule.definition.components.push(comp);
+    studioSelectedId = comp.id;
+    renderStudioCanvas();
+    renderStudioProperties();
+  });
+
+  function renderStudioCanvas(){
+    const comps = currentModule.definition.components || [];
+    studioCanvas.innerHTML = comps.map((c, i) => (
+      '<div class="studio-canvas-block'+(c.id===studioSelectedId?' selected':'')+'" data-comp-id="'+c.id+'">'+
+        '<div><div class="scb-label">'+escapeHtml(c.label)+'</div><div class="scb-type">'+c.type+(c.binding?' · bound to '+escapeHtml(c.binding):'')+'</div></div>'+
+        '<div class="scb-actions">'+
+          (i > 0 ? '<button type="button" data-move-up="'+c.id+'">↑</button>' : '')+
+          (i < comps.length-1 ? '<button type="button" data-move-down="'+c.id+'">↓</button>' : '')+
+          '<button type="button" data-duplicate="'+c.id+'">⧉</button>'+
+          '<button type="button" data-remove="'+c.id+'">×</button>'+
+        '</div>'+
+      '</div>'
+    )).join('') || '<p class="meta" style="text-align:center;padding:30px 0;">Drag a component here to get started</p>';
+
+    studioCanvas.querySelectorAll('[data-comp-id]').forEach(el => {
+      el.addEventListener('click', (e) => {
+        if (e.target.closest('button')) return;
+        studioSelectedId = el.dataset.compId;
+        renderStudioCanvas();
+        renderStudioProperties();
+      });
+    });
+    studioCanvas.querySelectorAll('[data-move-up]').forEach(btn => btn.addEventListener('click', (e) => { e.stopPropagation(); moveStudioComponent(btn.dataset.moveUp, -1); }));
+    studioCanvas.querySelectorAll('[data-move-down]').forEach(btn => btn.addEventListener('click', (e) => { e.stopPropagation(); moveStudioComponent(btn.dataset.moveDown, 1); }));
+    studioCanvas.querySelectorAll('[data-duplicate]').forEach(btn => btn.addEventListener('click', (e) => { e.stopPropagation(); duplicateStudioComponent(btn.dataset.duplicate); }));
+    studioCanvas.querySelectorAll('[data-remove]').forEach(btn => btn.addEventListener('click', (e) => { e.stopPropagation(); removeStudioComponent(btn.dataset.remove); }));
+  }
+
+  function moveStudioComponent(id, dir){
+    const comps = currentModule.definition.components;
+    const i = comps.findIndex(c => c.id === id);
+    const j = i + dir;
+    if (i < 0 || j < 0 || j >= comps.length) return;
+    [comps[i], comps[j]] = [comps[j], comps[i]];
+    renderStudioCanvas();
+  }
+  function duplicateStudioComponent(id){
+    const comps = currentModule.definition.components;
+    const i = comps.findIndex(c => c.id === id);
+    if (i < 0) return;
+    const copy = { ...comps[i], id: 'c' + (studioIdCounter++) + '_' + Date.now() };
+    comps.splice(i + 1, 0, copy);
+    renderStudioCanvas();
+  }
+  function removeStudioComponent(id){
+    currentModule.definition.components = currentModule.definition.components.filter(c => c.id !== id);
+    if (studioSelectedId === id) studioSelectedId = null;
+    renderStudioCanvas();
+    renderStudioProperties();
+  }
+
+  let dataSourcesCache = null;
+  async function loadDataSources(){
+    if (dataSourcesCache) return dataSourcesCache;
+    try{
+      dataSourcesCache = await api('/api/superadmin/data-sources');
+    } catch(e){
+      dataSourcesCache = [];
+    }
+    return dataSourcesCache;
+  }
+
+  async function renderStudioProperties(){
+    const host = $('studio-properties');
+    const comp = (currentModule.definition.components || []).find(c => c.id === studioSelectedId);
+    if (!comp){
+      host.innerHTML = '<p class="meta" style="font-size:11.5px;">Select a component on the canvas to edit it.</p>';
+      return;
+    }
+    const needsBinding = comp.type !== 'container' && comp.type !== 'row' && comp.type !== 'button';
+    const sources = needsBinding ? await loadDataSources() : [];
+    const [boundTable, boundField] = (comp.binding || '').split('.');
+    host.innerHTML =
+      '<div class="field" style="margin-bottom:8px;"><label>Label</label><input type="text" id="studio-prop-label" value="'+escapeAttr(comp.label)+'"></div>'+
+      (needsBinding ?
+        '<div class="field" style="margin-bottom:8px;"><label>Bind to table</label><select id="studio-prop-table">'+
+          '<option value="">— none —</option>'+
+          sources.map(s => '<option value="'+s.table+'"'+(s.table===boundTable?' selected':'')+'>'+escapeHtml(s.label)+'</option>').join('')+
+        '</select></div>'+
+        '<div class="field"><label>Field</label><select id="studio-prop-field" '+(boundTable?'':'disabled')+'>'+
+          '<option value="">— select a table first —</option>'+
+          (sources.find(s => s.table === boundTable)?.fields || []).map(f => '<option value="'+f+'"'+(f===boundField?' selected':'')+'>'+f+'</option>').join('')+
+        '</select></div>'
+        : '');
+    const labelInput = document.getElementById('studio-prop-label');
+    if (labelInput) labelInput.addEventListener('input', () => { comp.label = labelInput.value; renderStudioCanvas(); });
+    const tableSelect = document.getElementById('studio-prop-table');
+    if (tableSelect) tableSelect.addEventListener('change', () => {
+      comp.binding = tableSelect.value ? tableSelect.value + '.' : '';
+      renderStudioCanvas();
+      renderStudioProperties();
+    });
+    const fieldSelect = document.getElementById('studio-prop-field');
+    if (fieldSelect) fieldSelect.addEventListener('change', () => {
+      comp.binding = boundTable + '.' + fieldSelect.value;
+      renderStudioCanvas();
+    });
+  }
+
+  $('studio-save-btn').addEventListener('click', async () => {
+    $('studio-save-msg').innerHTML = '<div class="admin-row" style="color:var(--ink-soft);">Saving...</div>';
+    try{
+      currentModule = await api('/api/superadmin/modules/'+currentModule.id, {
+        method:'PATCH',
+        body: JSON.stringify({ definition: currentModule.definition }),
+      });
+      $('studio-save-msg').innerHTML = '<div class="admin-row" style="color:#016E51;">Saved</div>';
+      setTimeout(() => { $('studio-save-msg').innerHTML = ''; }, 2000);
+    } catch(e){
+      $('studio-save-msg').innerHTML = '<div class="admin-row" style="color:#8C2C20;">Could not save</div>';
+    }
+  });
+
+  $('module-show-create-btn').addEventListener('click', () => {
+    const sec = $('module-create-section');
+    sec.style.display = sec.style.display === 'none' ? 'flex' : 'none';
+    if (sec.style.display !== 'none') sec.scrollIntoView({behavior:'smooth', block:'start'});
+  });
+  $('module-cancel-create-btn').addEventListener('click', () => {
+    $('module-create-section').style.display = 'none';
+    $('module-new-name').value = '';
+    $('module-new-description').value = '';
+    selectedModuleMethod = null;
+    document.querySelectorAll('.module-method-btn').forEach(b => { b.style.borderColor = 'var(--line)'; b.style.background = 'var(--card)'; });
+    $('module-create-btn').disabled = true;
+    $('module-create-msg').innerHTML = '';
+  });
+  document.querySelectorAll('.module-method-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      selectedModuleMethod = btn.dataset.method;
+      document.querySelectorAll('.module-method-btn').forEach(b => { b.style.borderColor = 'var(--line)'; b.style.background = 'var(--card)'; });
+      btn.style.borderColor = 'var(--brand)';
+      btn.style.background = 'var(--brand-tint)';
+      $('module-create-btn').disabled = false;
+    });
+  });
+  $('module-create-btn').addEventListener('click', async () => {
+    const name = $('module-new-name').value.trim();
+    const description = $('module-new-description').value.trim();
+    $('module-create-msg').innerHTML = '';
+    if (!name){
+      $('module-create-msg').innerHTML = '<div class="admin-row" style="color:#8C2C20;">Module name is required</div>';
+      return;
+    }
+    if (!selectedModuleMethod){
+      $('module-create-msg').innerHTML = '<div class="admin-row" style="color:#8C2C20;">Choose a creation method</div>';
+      return;
+    }
+    $('module-create-btn').disabled = true;
+    try{
+      await api('/api/superadmin/modules', {method:'POST', body: JSON.stringify({name, description, creationMethod: selectedModuleMethod})});
+      showToast('Module created', 'success');
+      $('module-cancel-create-btn').click();
+      await loadModules();
+    } catch(e){
+      $('module-create-msg').innerHTML = '<div class="admin-row" style="color:#8C2C20;">Could not create the module</div>';
+      $('module-create-btn').disabled = false;
+    }
+  });
+
   $('sa-create-admin-btn').addEventListener('click', async () => {
     const email = $('sa-new-admin-email2').value.trim();
     const password = $('sa-new-admin-password2').value;
@@ -497,12 +1044,62 @@
       $('sa-new-admin-email2').value = '';
       $('sa-new-admin-password2').value = '';
       $('sa-create-admin-msg').innerHTML = '<div class="admin-row" style="color:#016E51;">Super admin created</div>';
+      await loadAdminsList();
     } catch(e){
       $('sa-create-admin-msg').innerHTML = '<div class="admin-row" style="color:#8C2C20;">That email is already taken, or something went wrong</div>';
     } finally {
       $('sa-create-admin-btn').disabled = false;
     }
   });
+
+  const BUILDER_PERMISSIONS = ['builder.view', 'builder.create', 'builder.edit', 'builder.delete', 'builder.publish', 'builder.restore'];
+  let actingAdminUnrestricted = true;
+
+  async function loadAdminsList(){
+    try{
+      const admins = await api('/api/superadmin/admins');
+      const self = admins.find(a => a.isSelf);
+      actingAdminUnrestricted = self ? self.builderPermissions === null : false;
+      $('sa-admins-list').innerHTML = admins.map(a => (
+        '<div class="admin-row" style="flex-direction:column;align-items:stretch;gap:8px;">'+
+          '<div style="display:flex;justify-content:space-between;"><b>'+escapeHtml(a.email)+(a.isSelf?' <span class="meta">(you)</span>':'')+'</b>'+
+            '<span class="status-badge '+(a.builderPermissions===null?'approved':'pending')+'">'+(a.builderPermissions===null?'Unrestricted':'Restricted')+'</span></div>'+
+          '<div style="display:flex;flex-wrap:wrap;gap:10px;" data-admin-perms="'+a.id+'">'+
+            BUILDER_PERMISSIONS.map(p => (
+              '<label style="display:flex;align-items:center;gap:5px;font-size:11.5px;">'+
+                '<input type="checkbox" value="'+p+'" '+((a.builderPermissions===null || (a.builderPermissions||[]).includes(p))?'checked':'')+' '+(actingAdminUnrestricted?'':'disabled')+'>'+
+                p.replace('builder.','')+
+              '</label>'
+            )).join('')+
+          '</div>'+
+          (actingAdminUnrestricted ? '<div style="display:flex;gap:8px;"><button class="btn-ghost" type="button" data-save-perms="'+a.id+'" style="padding:5px 10px;font-size:11.5px;">Save</button><button class="btn-ghost" type="button" data-unrestrict="'+a.id+'" style="padding:5px 10px;font-size:11.5px;">Make unrestricted</button></div>' : '')+
+        '</div>'
+      )).join('') || '<div class="empty-hist">No super admins found</div>';
+
+      $('sa-admins-list').querySelectorAll('[data-save-perms]').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const id = btn.dataset.savePerms;
+          const checked = Array.from(document.querySelectorAll('[data-admin-perms="'+id+'"] input:checked')).map(i => i.value);
+          try{
+            await api('/api/superadmin/admins/'+id+'/builder-permissions', {method:'PATCH', body: JSON.stringify({permissions: checked})});
+            showToast('Permissions updated', 'success');
+            await loadAdminsList();
+          } catch(e){ showToast('Could not update permissions', 'error'); }
+        });
+      });
+      $('sa-admins-list').querySelectorAll('[data-unrestrict]').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          try{
+            await api('/api/superadmin/admins/'+btn.dataset.unrestrict+'/builder-permissions', {method:'PATCH', body: JSON.stringify({permissions: null})});
+            showToast('Admin is now unrestricted', 'success');
+            await loadAdminsList();
+          } catch(e){ showToast('Could not update permissions', 'error'); }
+        });
+      });
+    } catch(e){
+      $('sa-admins-list').innerHTML = '<div class="empty-hist">Could not load admins</div>';
+    }
+  }
 
   async function loadSuperAdminPayments(){
     try{
@@ -1447,6 +2044,13 @@
       company_status_changed: 'Company status changed',
       company_plan_changed: 'Company plan changed',
       company_deleted: 'Company deleted',
+      module_created: 'Module created',
+      module_deleted: 'Module deleted',
+      module_updated: 'Module updated',
+      module_status_changed: 'Module status changed',
+      module_version_saved: 'Module version saved',
+      module_version_restored: 'Module version restored',
+      builder_permissions_changed: 'Builder permissions changed',
     };
     return map[action] || action;
   }

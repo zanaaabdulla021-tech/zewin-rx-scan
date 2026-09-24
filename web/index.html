@@ -14,6 +14,13 @@
 <link rel="stylesheet" href="css/account.css">
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.1/dist/cdn.min.js" defer></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/theme/dracula.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/javascript/javascript.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/xml/xml.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/css/css.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/htmlmixed/htmlmixed.min.js"></script>
 <script>
   tailwind.config = {
     corePlugins: { preflight: false },
@@ -125,6 +132,7 @@
     <button class="tab-btn" :class="{ active: activeView === 'sa-payments-view' }" @click="activeView = 'sa-payments-view'" data-saview="sa-payments-view">Payments</button>
     <button class="tab-btn" :class="{ active: activeView === 'sa-activity-view' }" @click="activeView = 'sa-activity-view'" data-saview="sa-activity-view">Activity Log</button>
     <button class="tab-btn" :class="{ active: activeView === 'sa-admins-view' }" @click="activeView = 'sa-admins-view'" data-saview="sa-admins-view">Super Admins</button>
+    <button class="tab-btn" :class="{ active: activeView === 'sa-modules-view' }" @click="activeView = 'sa-modules-view'" data-saview="sa-modules-view">Module Builder</button>
   </div>
   </div>
 

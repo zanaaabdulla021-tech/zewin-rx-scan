@@ -284,3 +284,115 @@ All from real data — no projections or fabricated numbers. The web
 dashboard renders the two growth series as bar charts (reusing the same
 chart renderer as company reports) plus "Recent organizations" and
 "Recent activity" lists.
+
+## Module Builder (Phase 1)
+
+Foundation for a reusable Module Builder: `Module` records with a
+structured `definition` JSON field (metadata, pages, components,
+dataSources, apis, actions, permissions, settings) — never just raw
+HTML, so Code and Studio creation paths produce the same shape.
+
+- `GET/POST /api/superadmin/modules` — list / create
+- `GET/DELETE /api/superadmin/modules/:id` — view / delete
+
+Web: Super Admin → "Module Builder" tab. Lets you create a module
+(name, description, Code or Studio method) and see it in a list.
+The actual Code editor and Studio drag-and-drop canvas that fill in
+a module's `definition` are NOT built yet — this phase only lays the
+real data foundation they'll write to.
+
+## Module Builder (Phase 2 — Code Mode)
+
+`PATCH /api/superadmin/modules/:id` saves a module's `definition`
+(also its name/description/status) — both Code and Studio phases write
+through this one endpoint since they share the same data shape.
+
+Code Mode is now real: file explorer, create/open/delete files, a
+CodeMirror editor with JS/HTML/CSS syntax highlighting, and Save (writes
+`definition.files` back via the PATCH above). Studio Mode still shows
+its "coming in the next phase" notice.
+
+## Module Builder (Phase 3 — AI Assistant in Code Mode)
+
+`POST /api/superadmin/modules/:id/ai { action, instruction, filePath, fileContent }`
+— action is one of generate/explain/fix/refactor. Uses the same Gemini
+setup as OCR/medicine-info. Always returns a suggestion; **never writes
+to the module itself** — the developer reviews it in the AI panel and,
+only if they choose to, clicks "Replace file with this" (which just
+updates the editor — they still have to hit Save separately).
+
+## Module Builder (Phase 4 — Version Control)
+
+New `ModuleVersion` table stores definition snapshots per module.
+- `POST /api/superadmin/modules/:id/versions` — save a snapshot (optional note)
+- `GET /api/superadmin/modules/:id/versions` — list (newest first)
+- `GET .../versions/:versionId` — view one snapshot's full definition
+- `POST .../versions/:versionId/restore` — restore it as current
+  (auto-snapshots the current state first, so nothing is ever lost)
+
+Web: "Versions" button in the Code Mode toolbar opens the panel — save,
+view (JSON preview), or restore any past version.
+
+## Module Builder (Phase 5 — Publishing workflow)
+
+`POST /api/superadmin/modules/:id/status { status }` moves a module
+through Draft → Preview → Testing → Approved → Published — always an
+explicit call a super admin makes from the UI; nothing else in the
+builder changes status automatically.
+
+Web: the module detail view shows a pipeline (current stage highlighted)
+and buttons for every stage, each behind a confirm dialog (Publish gets
+its own wording).
+
+## Module Builder (Phase 6 — Studio Mode, real drag-and-drop)
+
+Opening a Studio module now shows a working canvas (native HTML5
+drag-and-drop, no external library): drag a component (Container, Row,
+Text/Number/Select/Checkbox field, Table, Button) from the palette onto
+the canvas, click it to edit its label and (for fields) its data
+binding ("table.column") in the Properties panel, reorder/duplicate/
+remove it, then Save — writes to `definition.components`, the same
+structured shape Code Mode's `definition.files` lives alongside.
+
+Scope note: this is the real component/canvas/binding/save loop from
+the spec, with a deliberately smaller starter palette (not every listed
+component type yet) and no Grid/Tabs/Accordion nesting or resize
+handles — those extend this same foundation later rather than needing
+a different architecture.
+
+## Module Builder (Phase 7 — Data Sources)
+
+`GET /api/superadmin/data-sources` returns the app's real business
+tables and fields (organizations, branches, users, memberships,
+prescriptions, payments) — matches backend/prisma/schema.prisma exactly,
+not a made-up list. Internal bookkeeping tables (ActivityLog,
+ModuleVersion) are left out on purpose.
+
+Web: Studio Mode's Properties panel now has real "Bind to table" /
+"Field" dropdowns (populated from this endpoint) instead of a free-text
+box — a form field's binding is always a real column that actually
+exists.
+
+## Module Builder (Phase 8 — Permissions, final phase)
+
+New `User.builderPermissions` field (JSON array, `null` = unrestricted —
+every admin's starting state). `requireBuilderPermission(perm)` checks
+it fresh from the database on every request (not the JWT, so a change
+takes effect immediately). Guards every module-builder route:
+builder.view/create/edit/delete/publish/restore, matching the spec
+exactly. Publishing specifically needs builder.publish even when the
+route is otherwise builder.edit.
+
+- `GET /api/superadmin/admins` — list super admins + their permissions
+- `PATCH /api/superadmin/admins/:id/builder-permissions { permissions }`
+  — only callable by an admin who is themselves unrestricted, so a
+  restricted admin can never grant themselves (or anyone) more access
+
+Web: Super Admins tab now lists every admin with a permissions
+checklist — editable only if you're unrestricted yourself.
+
+**This completes all 8 phases of the Module Builder spec**: Modules
+list + create (Code/Studio), real Code editor with AI assistant, Studio
+drag-and-drop canvas with real data-source binding, version control,
+publishing workflow, and now granular permissions — all built on one
+shared `Module.definition` data shape, reusable by future projects.

@@ -1,0 +1,159 @@
+    <div id="sa-modules-view" class="sa-view" :class="{ active: activeView === 'sa-modules-view' }">
+      <div class="page-header" style="flex-direction:row;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:10px;">
+        <div>
+          <h2>Module Builder</h2>
+          <p>Create reusable modules for this and future projects, either by writing code or with the visual Studio.</p>
+        </div>
+        <button class="btn-primary" id="module-show-create-btn" type="button">+ Create Module</button>
+      </div>
+
+      <section id="module-create-section" style="display:none;">
+        <div class="card">
+          <p class="section-label" style="margin:0;">Create New Module</p>
+          <div class="field">
+            <label for="module-new-name">Module Name</label>
+            <input type="text" id="module-new-name" placeholder="e.g. Inventory Tracker">
+          </div>
+          <div class="field">
+            <label for="module-new-description">Description</label>
+            <input type="text" id="module-new-description" placeholder="What does this module do?">
+          </div>
+          <div class="field">
+            <label>Creation Method</label>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;">
+              <button type="button" class="module-method-btn" data-method="code" style="flex:1;min-width:140px;padding:16px;border-radius:12px;border:1.5px solid var(--line);background:var(--card);text-align:center;">
+                <div style="font-size:22px;">💻</div>
+                <div style="font-weight:700;font-size:13.5px;margin-top:4px;">Code</div>
+              </button>
+              <button type="button" class="module-method-btn" data-method="studio" style="flex:1;min-width:140px;padding:16px;border-radius:12px;border:1.5px solid var(--line);background:var(--card);text-align:center;">
+                <div style="font-size:22px;">🎨</div>
+                <div style="font-weight:700;font-size:13.5px;margin-top:4px;">Studio / Drag &amp; Drop</div>
+              </button>
+            </div>
+          </div>
+          <div style="display:flex;gap:10px;">
+            <button class="btn-primary" id="module-create-btn" type="button" disabled>Create module</button>
+            <button class="btn-ghost" id="module-cancel-create-btn" type="button">Cancel</button>
+          </div>
+          <div id="module-create-msg"></div>
+        </div>
+      </section>
+
+      <section>
+        <p class="section-label">Modules</p>
+        <div class="branch-grid" id="module-list"></div>
+      </section>
+
+      <section id="module-detail-section" style="display:none;">
+        <button class="btn-ghost" type="button" id="module-detail-back-btn" style="align-self:flex-start;margin-bottom:8px;">&larr; Back to modules</button>
+        <div class="page-header" style="margin:0 0 10px;">
+          <h2 id="module-detail-name" style="font-size:18px;"></h2>
+          <p id="module-detail-meta"></p>
+        </div>
+
+        <div class="card" style="margin-bottom:14px;">
+          <p class="section-label" style="margin:0;">Publishing</p>
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+            <span id="module-status-pipeline"></span>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <button class="btn-ghost" type="button" data-set-status="draft" style="padding:6px 12px;font-size:12px;">Draft</button>
+            <button class="btn-ghost" type="button" data-set-status="preview" style="padding:6px 12px;font-size:12px;">Preview</button>
+            <button class="btn-ghost" type="button" data-set-status="testing" style="padding:6px 12px;font-size:12px;">Testing</button>
+            <button class="btn-ghost" type="button" data-set-status="approved" style="padding:6px 12px;font-size:12px;">Approved</button>
+            <button class="btn-primary" type="button" data-set-status="published" style="padding:6px 14px;font-size:12px;">Publish</button>
+          </div>
+        </div>
+
+        <div id="module-code-workspace" style="display:none;">
+          <div style="display:grid;grid-template-columns:220px 1fr 280px;gap:14px;min-height:480px;">
+            <div class="card" style="padding:12px;gap:10px;">
+              <div style="display:flex;justify-content:space-between;align-items:center;">
+                <p class="section-label" style="margin:0;">Files</p>
+                <button class="btn-ghost" type="button" id="module-new-file-btn" style="padding:4px 9px;font-size:11.5px;">+ New</button>
+              </div>
+              <div id="module-file-list" class="admin-list" style="gap:4px;"></div>
+            </div>
+            <div class="card" style="padding:0;overflow:hidden;display:flex;flex-direction:column;">
+              <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;border-bottom:1px solid var(--line);">
+                <span id="module-current-file-name" style="font-size:12.5px;font-weight:700;color:var(--ink-soft);">No file selected</span>
+                <div style="display:flex;gap:8px;">
+                  <button class="btn-ghost" type="button" id="module-versions-btn" style="padding:6px 12px;font-size:12px;">Versions</button>
+                  <button class="del-btn" type="button" id="module-delete-file-btn" style="display:none;">Delete file</button>
+                  <button class="btn-primary" type="button" id="module-save-file-btn" style="padding:6px 14px;font-size:12.5px;" disabled>Save</button>
+                </div>
+              </div>
+              <div id="module-editor-host" style="flex:1;min-height:440px;"></div>
+            </div>
+            <div class="card" style="padding:12px;gap:10px;">
+              <p class="section-label" style="margin:0;">AI Assistant</p>
+              <p class="meta" style="margin:0;font-size:11px;">Suggests changes only — never saves or publishes for you.</p>
+              <div style="display:flex;flex-wrap:wrap;gap:6px;">
+                <button class="btn-ghost" type="button" data-ai-action="generate" style="padding:5px 10px;font-size:11px;">Generate</button>
+                <button class="btn-ghost" type="button" data-ai-action="explain" style="padding:5px 10px;font-size:11px;">Explain</button>
+                <button class="btn-ghost" type="button" data-ai-action="fix" style="padding:5px 10px;font-size:11px;">Fix errors</button>
+                <button class="btn-ghost" type="button" data-ai-action="refactor" style="padding:5px 10px;font-size:11px;">Refactor</button>
+              </div>
+              <textarea id="module-ai-instruction" placeholder="e.g. Add a barcode field and validate it's numeric" rows="3" style="font-family:inherit;font-size:12.5px;padding:8px 10px;border-radius:9px;border:1px solid var(--line);resize:vertical;"></textarea>
+              <button class="btn-primary" type="button" id="module-ai-run-btn" style="padding:8px;font-size:12.5px;">Ask AI</button>
+              <div id="module-ai-result" style="display:none;flex-direction:column;gap:8px;">
+                <div id="module-ai-output" style="font-size:12px;background:var(--bg);border-radius:9px;padding:10px;max-height:260px;overflow:auto;white-space:pre-wrap;font-family:monospace;"></div>
+                <button class="btn-ghost" type="button" id="module-ai-apply-btn" style="font-size:12px;">Replace file with this</button>
+              </div>
+            </div>
+          </div>
+          <div id="module-save-msg" style="margin-top:8px;"></div>
+        </div>
+
+        <div id="module-studio-workspace" style="display:none;">
+          <div style="display:grid;grid-template-columns:200px 1fr 260px;gap:14px;min-height:420px;">
+            <div class="card" style="padding:12px;gap:10px;">
+              <p class="section-label" style="margin:0;">Components</p>
+              <p class="meta" style="margin:0;font-size:10.5px;">Drag onto the canvas →</p>
+              <p class="meta" style="margin:6px 0 0;font-size:10px;font-weight:700;text-transform:uppercase;">Layout</p>
+              <div class="studio-palette-item" draggable="true" data-comp-type="container">Container</div>
+              <div class="studio-palette-item" draggable="true" data-comp-type="row">Row</div>
+              <p class="meta" style="margin:6px 0 0;font-size:10px;font-weight:700;text-transform:uppercase;">Forms</p>
+              <div class="studio-palette-item" draggable="true" data-comp-type="text">Text field</div>
+              <div class="studio-palette-item" draggable="true" data-comp-type="number">Number field</div>
+              <div class="studio-palette-item" draggable="true" data-comp-type="select">Select</div>
+              <div class="studio-palette-item" draggable="true" data-comp-type="checkbox">Checkbox</div>
+              <p class="meta" style="margin:6px 0 0;font-size:10px;font-weight:700;text-transform:uppercase;">Data</p>
+              <div class="studio-palette-item" draggable="true" data-comp-type="table">Table</div>
+              <p class="meta" style="margin:6px 0 0;font-size:10px;font-weight:700;text-transform:uppercase;">Actions</p>
+              <div class="studio-palette-item" draggable="true" data-comp-type="button">Button</div>
+            </div>
+
+            <div class="card" style="padding:16px;">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                <p class="section-label" style="margin:0;">Canvas</p>
+                <button class="btn-primary" type="button" id="studio-save-btn" style="padding:6px 14px;font-size:12px;">Save</button>
+              </div>
+              <div id="studio-canvas" style="min-height:340px;border:1.5px dashed var(--line);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:8px;"></div>
+            </div>
+
+            <div class="card" style="padding:12px;gap:10px;">
+              <p class="section-label" style="margin:0;">Properties</p>
+              <div id="studio-properties">
+                <p class="meta" style="font-size:11.5px;">Select a component on the canvas to edit it.</p>
+              </div>
+            </div>
+          </div>
+          <div id="studio-save-msg" style="margin-top:8px;"></div>
+        </div>
+
+        <div id="module-versions-panel" style="display:none;margin-top:14px;">
+          <div class="card">
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <p class="section-label" style="margin:0;">Version history</p>
+              <div style="display:flex;gap:8px;">
+                <input type="text" id="module-version-note" placeholder="Note (optional)" style="font-family:inherit;font-size:12.5px;padding:7px 10px;border-radius:8px;border:1px solid var(--line);">
+                <button class="btn-primary" type="button" id="module-save-version-btn" style="padding:7px 14px;font-size:12.5px;">Save version</button>
+                <button class="btn-ghost" type="button" id="module-versions-close-btn" style="padding:7px 12px;font-size:12.5px;">Close</button>
+              </div>
+            </div>
+            <div id="module-version-list" class="admin-list"></div>
+          </div>
+        </div>
+      </section>
+    </div>

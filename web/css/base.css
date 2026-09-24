@@ -220,3 +220,14 @@
     #superadmin-screen .stat-grid{grid-template-columns:repeat(4,1fr);}
     #sa-dashboard-view section[style*="grid-template-columns:1fr"]{grid-template-columns:1fr 1fr!important;}
   }
+
+/* ---- Module Builder: Studio Mode ---- */
+.studio-palette-item{padding:8px 10px;border-radius:8px;border:1px solid var(--line);background:var(--card);font-size:12px;cursor:grab;transition:border-color .15s,background .15s;}
+.studio-palette-item:hover{border-color:var(--brand);background:var(--brand-tint);}
+.studio-canvas-block{padding:12px;border-radius:10px;border:1.5px solid var(--line);background:var(--card);cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:10px;}
+.studio-canvas-block.selected{border-color:var(--brand);box-shadow:0 0 0 2px var(--brand-tint);}
+.studio-canvas-block .scb-label{font-size:13px;font-weight:600;}
+.studio-canvas-block .scb-type{font-size:10.5px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.03em;}
+.studio-canvas-block .scb-actions{display:flex;gap:4px;}
+.studio-canvas-block .scb-actions button{padding:3px 7px;font-size:11px;border-radius:6px;border:1px solid var(--line);background:var(--card);}
+#studio-canvas.drag-over{border-color:var(--brand)!important;background:var(--brand-tint);}

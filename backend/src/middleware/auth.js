@@ -1,4 +1,5 @@
 const jwt = require('jsonwebtoken');
+const prisma = require('../lib/prisma');
 
 function requireAuth(req, res, next) {
   const header = req.headers.authorization || '';
@@ -69,6 +70,29 @@ function requireSuperAdmin(req, res, next) {
   next();
 }
 
+// One of builder.view / builder.create / builder.edit / builder.delete /
+// builder.publish / builder.restore, checked fresh from the database
+// (not the JWT) so a permission change takes effect immediately, without
+// waiting for the admin to log in again. A null builderPermissions
+// (every admin's starting state) means unrestricted — every permission.
+const ALL_BUILDER_PERMISSIONS = ['builder.view', 'builder.create', 'builder.edit', 'builder.delete', 'builder.publish', 'builder.restore'];
+function requireBuilderPermission(permission) {
+  return async function (req, res, next) {
+    if (req.user?.role !== 'super_admin') {
+      return res.status(403).json({ error: 'forbidden' });
+    }
+    const user = await prisma.user.findUnique({ where: { id: req.user.id } });
+    if (!user) return res.status(403).json({ error: 'forbidden' });
+    if (user.builderPermissions == null) return next(); // unrestricted
+    let granted = [];
+    try { granted = JSON.parse(user.builderPermissions); } catch (_) {}
+    if (!granted.includes(permission)) {
+      return res.status(403).json({ error: 'missing_builder_permission', permission });
+    }
+    next();
+  };
+}
+
 module.exports = {
   requireAuth,
   requireOrgManager,
@@ -76,6 +100,8 @@ module.exports = {
   requireOrgWideRead,
   requireScanner,
   requireSuperAdmin,
+  requireBuilderPermission,
+  ALL_BUILDER_PERMISSIONS,
   ORG_MANAGER_ROLES,
   REVIEWER_ROLES,
   READ_ONLY_ROLES,

@@ -12,6 +12,8 @@ const {
   requireOrgWideRead,
   requireScanner,
   requireSuperAdmin,
+  requireBuilderPermission,
+  ALL_BUILDER_PERMISSIONS,
 } = require('./middleware/auth');
 const { limitsFor, ALLOWED_PLANS, billingFor, ALLOWED_BILLING_CYCLES } = require('./plans');
 
@@ -1330,6 +1332,290 @@ app.post('/api/superadmin/create-admin', requireAuth, requireSuperAdmin, async (
   const user = await prisma.user.create({ data: { email, passwordHash, globalRole: 'super_admin' } });
   logActivity({ organizationId: null, userId: req.user.id, userEmail: req.user.email, action: 'super_admin_created', details: email });
   res.status(201).json({ id: user.id, email: user.email });
+});
+
+// Builder permissions per super admin. A null builderPermissions means
+// unrestricted (every builder.* permission) — the state every admin
+// starts in, and the only state that lets someone grant/restrict others'
+// builder access (so a restricted admin can never escalate themselves).
+app.get('/api/superadmin/admins', requireAuth, requireSuperAdmin, async (req, res) => {
+  const admins = await prisma.user.findMany({ where: { globalRole: 'super_admin' }, orderBy: { createdAt: 'asc' } });
+  res.json(admins.map((a) => ({
+    id: a.id,
+    email: a.email,
+    builderPermissions: a.builderPermissions == null ? null : JSON.parse(a.builderPermissions),
+    isSelf: a.id === req.user.id,
+  })));
+});
+
+app.patch('/api/superadmin/admins/:id/builder-permissions', requireAuth, requireSuperAdmin, async (req, res) => {
+  const actingAdmin = await prisma.user.findUnique({ where: { id: req.user.id } });
+  if (actingAdmin.builderPermissions != null) {
+    return res.status(403).json({ error: 'forbidden', reason: 'only an unrestricted admin can change builder permissions' });
+  }
+  const targetId = Number(req.params.id);
+  const target = await prisma.user.findUnique({ where: { id: targetId } });
+  if (!target || target.globalRole !== 'super_admin') return res.status(404).json({ error: 'not_found' });
+
+  const permissions = req.body?.permissions;
+  let value;
+  if (permissions === null) {
+    value = null; // unrestricted
+  } else if (Array.isArray(permissions) && permissions.every((p) => ALL_BUILDER_PERMISSIONS.includes(p))) {
+    value = JSON.stringify(permissions);
+  } else {
+    return res.status(400).json({ error: 'invalid_permissions' });
+  }
+
+  const updated = await prisma.user.update({ where: { id: targetId }, data: { builderPermissions: value } });
+  logActivity({ organizationId: null, userId: req.user.id, userEmail: req.user.email, action: 'builder_permissions_changed', details: `${target.email}: ${value === null ? 'unrestricted' : value}` });
+  res.json({ id: updated.id, email: updated.email, builderPermissions: value === null ? null : JSON.parse(value) });
+});
+
+// -------------------------------------------------------- module builder -
+// Phase 1: create/list/view/delete module records. Code and Studio editing
+// (actually writing the module's `definition`), AI assistance, versioning,
+// and publishing come in later phases — this lays the real foundation
+// (the same data shape) they'll all build on.
+
+function formatModule(m) {
+  let definition = {};
+  try {
+    definition = JSON.parse(m.definition || '{}');
+  } catch (_) {}
+  return {
+    id: m.id,
+    name: m.name,
+    description: m.description,
+    creationMethod: m.creationMethod,
+    status: m.status,
+    definition,
+    createdBy: m.createdBy,
+    createdAt: m.createdAt,
+    updatedAt: m.updatedAt,
+  };
+}
+
+// The real tables/fields Studio components can bind to — matches
+// backend/prisma/schema.prisma exactly, not a made-up list. Only the
+// business-data models are exposed (internal bookkeeping tables like
+// ActivityLog/ModuleVersion are left out on purpose).
+const MODULE_DATA_SOURCES = [
+  { table: 'organizations', label: 'Organizations', fields: ['id', 'name', 'status', 'plan', 'billingCycle', 'expiryDate', 'phone', 'email', 'address', 'country', 'city', 'createdAt'] },
+  { table: 'branches', label: 'Branches', fields: ['id', 'name', 'organizationId', 'approved', 'createdAt'] },
+  { table: 'users', label: 'Users', fields: ['id', 'email', 'globalRole', 'createdAt'] },
+  { table: 'memberships', label: 'Memberships', fields: ['id', 'userId', 'organizationId', 'role', 'branchId', 'createdAt'] },
+  { table: 'prescriptions', label: 'Prescriptions', fields: ['id', 'doctorName', 'phone', 'medicines', 'category', 'source', 'status', 'branchId', 'userId', 'createdAt'] },
+  { table: 'payments', label: 'Payments', fields: ['id', 'amount', 'currency', 'method', 'status', 'reference', 'organizationId', 'createdAt'] },
+];
+
+app.get('/api/superadmin/data-sources', requireAuth, requireBuilderPermission('builder.view'), async (req, res) => {
+  res.json(MODULE_DATA_SOURCES);
+});
+
+app.get('/api/superadmin/modules', requireAuth, requireBuilderPermission('builder.view'), async (req, res) => {
+  const modules = await prisma.module.findMany({ orderBy: { updatedAt: 'desc' } });
+  res.json(modules.map(formatModule));
+});
+
+app.post('/api/superadmin/modules', requireAuth, requireBuilderPermission('builder.create'), async (req, res) => {
+  const { name, description, creationMethod } = req.body || {};
+  if (!name || !String(name).trim()) return res.status(400).json({ error: 'name_required' });
+  if (!['code', 'studio'].includes(creationMethod)) return res.status(400).json({ error: 'invalid_creation_method' });
+
+  const emptyDefinition = {
+    metadata: { name: String(name).trim(), description: description || '' },
+    pages: [],
+    components: [],
+    dataSources: [],
+    apis: [],
+    actions: [],
+    permissions: { view: [], create: [], edit: [], delete: [], publish: [], restore: [] },
+    settings: {},
+  };
+
+  const module = await prisma.module.create({
+    data: {
+      name: String(name).trim(),
+      description: description || null,
+      creationMethod,
+      status: 'draft',
+      definition: JSON.stringify(emptyDefinition),
+      createdBy: req.user.email,
+    },
+  });
+  logActivity({ organizationId: null, userId: req.user.id, userEmail: req.user.email, action: 'module_created', details: `"${module.name}" (${creationMethod})` });
+  res.status(201).json(formatModule(module));
+});
+
+app.get('/api/superadmin/modules/:id', requireAuth, requireBuilderPermission('builder.view'), async (req, res) => {
+  const id = Number(req.params.id);
+  const module = await prisma.module.findUnique({ where: { id } });
+  if (!module) return res.status(404).json({ error: 'not_found' });
+  res.json(formatModule(module));
+});
+
+// Generic save — Code Mode (files) and Studio Mode (pages/components) both
+// write here, since every module shares the same `definition` shape.
+app.patch('/api/superadmin/modules/:id', requireAuth, requireBuilderPermission('builder.edit'), async (req, res) => {
+  const id = Number(req.params.id);
+  const existing = await prisma.module.findUnique({ where: { id } });
+  if (!existing) return res.status(404).json({ error: 'not_found' });
+
+  const data = {};
+  if (req.body?.name) data.name = String(req.body.name).trim();
+  if (typeof req.body?.description === 'string') data.description = req.body.description;
+  if (req.body?.status) data.status = req.body.status;
+  if (req.body?.definition && typeof req.body.definition === 'object') {
+    data.definition = JSON.stringify(req.body.definition);
+  }
+  const module = await prisma.module.update({ where: { id }, data });
+  logActivity({ organizationId: null, userId: req.user.id, userEmail: req.user.email, action: 'module_updated', details: `"${module.name}"` });
+  res.json(formatModule(module));
+});
+
+// AI assistant inside Code Mode. Always returns a SUGGESTION for the
+// human to review and apply themselves — it never writes to the module.
+const MODULE_AI_ACTIONS = {
+  generate: 'Write the code the user is asking for. Reply with the complete file content only — no explanation, no markdown fences.',
+  explain: 'Explain in plain language what this code does, section by section. Be concise. Reply as plain text, not code.',
+  fix: 'Find and fix any bugs or errors in this code. Reply with the complete corrected file content only — no explanation, no markdown fences.',
+  refactor: 'Refactor this code for clarity and maintainability without changing its behavior. Reply with the complete refactored file content only — no explanation, no markdown fences.',
+};
+
+// ------------------------------------------------------ module versions -
+// A version is a snapshot of the module's definition at a point in time.
+// Saving a version never changes the module itself; restoring one does
+// (it becomes the module's current definition, and is itself snapshotted
+// first so nothing is ever silently lost).
+
+app.get('/api/superadmin/modules/:id/versions', requireAuth, requireBuilderPermission('builder.view'), async (req, res) => {
+  const moduleId = Number(req.params.id);
+  const versions = await prisma.moduleVersion.findMany({
+    where: { moduleId },
+    orderBy: { versionNumber: 'desc' },
+    select: { id: true, versionNumber: true, note: true, createdBy: true, createdAt: true },
+  });
+  res.json(versions);
+});
+
+app.get('/api/superadmin/modules/:id/versions/:versionId', requireAuth, requireBuilderPermission('builder.view'), async (req, res) => {
+  const version = await prisma.moduleVersion.findUnique({ where: { id: Number(req.params.versionId) } });
+  if (!version || version.moduleId !== Number(req.params.id)) return res.status(404).json({ error: 'not_found' });
+  let definition = {};
+  try { definition = JSON.parse(version.definition || '{}'); } catch (_) {}
+  res.json({ ...version, definition });
+});
+
+app.post('/api/superadmin/modules/:id/versions', requireAuth, requireBuilderPermission('builder.edit'), async (req, res) => {
+  const moduleId = Number(req.params.id);
+  const module = await prisma.module.findUnique({ where: { id: moduleId } });
+  if (!module) return res.status(404).json({ error: 'not_found' });
+
+  const last = await prisma.moduleVersion.findFirst({ where: { moduleId }, orderBy: { versionNumber: 'desc' } });
+  const nextNumber = (last?.versionNumber ?? 0) + 1;
+  const version = await prisma.moduleVersion.create({
+    data: {
+      moduleId,
+      versionNumber: nextNumber,
+      definition: module.definition,
+      note: req.body?.note || null,
+      createdBy: req.user.email,
+    },
+  });
+  logActivity({ organizationId: null, userId: req.user.id, userEmail: req.user.email, action: 'module_version_saved', details: `"${module.name}" v${nextNumber}` });
+  res.status(201).json(version);
+});
+
+app.post('/api/superadmin/modules/:id/versions/:versionId/restore', requireAuth, requireBuilderPermission('builder.restore'), async (req, res) => {
+  const moduleId = Number(req.params.id);
+  const module = await prisma.module.findUnique({ where: { id: moduleId } });
+  if (!module) return res.status(404).json({ error: 'not_found' });
+  const version = await prisma.moduleVersion.findUnique({ where: { id: Number(req.params.versionId) } });
+  if (!version || version.moduleId !== moduleId) return res.status(404).json({ error: 'not_found' });
+
+  // Snapshot the current state first, so restoring never loses work.
+  const last = await prisma.moduleVersion.findFirst({ where: { moduleId }, orderBy: { versionNumber: 'desc' } });
+  const nextNumber = (last?.versionNumber ?? 0) + 1;
+  await prisma.moduleVersion.create({
+    data: { moduleId, versionNumber: nextNumber, definition: module.definition, note: `Auto-saved before restoring v${version.versionNumber}`, createdBy: req.user.email },
+  });
+
+  const updated = await prisma.module.update({ where: { id: moduleId }, data: { definition: version.definition } });
+  logActivity({ organizationId: null, userId: req.user.id, userEmail: req.user.email, action: 'module_version_restored', details: `"${module.name}" restored to v${version.versionNumber}` });
+  res.json(formatModule(updated));
+});
+
+// -------------------------------------------------------- publishing ---
+// Draft -> Preview -> Testing -> Approved -> Published. Always an
+// explicit action a super admin takes here — nothing elsewhere in the
+// builder ever changes a module's status on its own.
+const MODULE_STATUS_ORDER = ['draft', 'preview', 'testing', 'approved', 'published'];
+
+app.post('/api/superadmin/modules/:id/status', requireAuth, requireBuilderPermission('builder.edit'), async (req, res) => {
+  const id = Number(req.params.id);
+  const module = await prisma.module.findUnique({ where: { id } });
+  if (!module) return res.status(404).json({ error: 'not_found' });
+  const status = req.body?.status;
+  if (!MODULE_STATUS_ORDER.includes(status)) return res.status(400).json({ error: 'invalid_status' });
+
+  if (status === 'published') {
+    const user = await prisma.user.findUnique({ where: { id: req.user.id } });
+    const granted = user.builderPermissions == null ? null : JSON.parse(user.builderPermissions || '[]');
+    if (granted !== null && !granted.includes('builder.publish')) {
+      return res.status(403).json({ error: 'missing_builder_permission', permission: 'builder.publish' });
+    }
+  }
+
+  const updated = await prisma.module.update({ where: { id }, data: { status } });
+  logActivity({ organizationId: null, userId: req.user.id, userEmail: req.user.email, action: 'module_status_changed', details: `"${module.name}": ${module.status} → ${status}` });
+  res.json(formatModule(updated));
+});
+
+app.post('/api/superadmin/modules/:id/ai', requireAuth, requireBuilderPermission('builder.edit'), async (req, res) => {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) return res.status(500).json({ error: 'server_misconfigured' });
+  const id = Number(req.params.id);
+  const module = await prisma.module.findUnique({ where: { id } });
+  if (!module) return res.status(404).json({ error: 'not_found' });
+
+  const { action, instruction, filePath, fileContent } = req.body || {};
+  if (!MODULE_AI_ACTIONS[action]) return res.status(400).json({ error: 'invalid_action' });
+
+  const prompt =
+    `You are a coding assistant working inside the "${module.name}" module ` +
+    `(a reusable module in a larger multi-tenant SaaS platform). ` +
+    `${MODULE_AI_ACTIONS[action]}\n\n` +
+    `File: ${filePath || '(untitled)'}\n` +
+    `--- current file content ---\n${fileContent || '(empty file)'}\n--- end file content ---\n\n` +
+    (instruction ? `Additional instruction from the developer: ${instruction}\n` : '') +
+    `Never invent details about the rest of the project you have not been shown.`;
+
+  try {
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${apiKey}`;
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }),
+    });
+    if (!response.ok) return res.status(502).json({ error: 'ai_unavailable' });
+    const data = await response.json();
+    const text = (data.candidates?.[0]?.content?.parts || []).map((p) => p.text || '').join('\n');
+    // Strip accidental markdown code fences, if the model added them anyway.
+    const cleaned = text.replace(/^```[a-zA-Z]*\n?/, '').replace(/```\s*$/, '');
+    res.json({ action, result: cleaned.trim() });
+  } catch (e) {
+    res.status(502).json({ error: 'ai_unavailable' });
+  }
+});
+
+app.delete('/api/superadmin/modules/:id', requireAuth, requireBuilderPermission('builder.delete'), async (req, res) => {
+  const id = Number(req.params.id);
+  const module = await prisma.module.findUnique({ where: { id } });
+  if (!module) return res.status(404).json({ error: 'not_found' });
+  await prisma.module.delete({ where: { id } });
+  logActivity({ organizationId: null, userId: req.user.id, userEmail: req.user.email, action: 'module_deleted', details: `"${module.name}"` });
+  res.json({ ok: true });
 });
 
 app.get('/api/superadmin/overview', requireAuth, requireSuperAdmin, async (req, res) => {
