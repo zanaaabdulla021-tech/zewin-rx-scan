@@ -1,66 +1,83 @@
-generator client {
-  provider      = "prisma-client-js"
-  binaryTargets = ["native", "rhel-openssl-3.0.x"]
-}
-
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "rhel-openssl-3.0.x"]
+}
+
+// A single pharmacy business (company) using the app. Every branch and
+// prescription belongs to exactly one organization — data never crosses
+// between organizations. Managed by the platform's super admin.
 model Organization {
-  id            Int            @id @default(autoincrement())
-  name          String
-  status        String         @default("trial")
-  plan          String         @default("free")
-  billingCycle  String         @default("monthly")
-  expiryDate    DateTime?
-  logoData      String?
-  phone         String?
-  email         String?
-  address       String?
-  country       String?
-  city          String?
-  createdAt     DateTime       @default(now())
-  activityLogs  ActivityLog[]
-  branches      Branch[]
-  memberships   Membership[]
+  id           Int           @id @default(autoincrement())
+  name         String
+  status       String        @default("trial") // "trial" | "active" | "suspended" | "expired"
+  plan         String        @default("free") // "free" | "basic" | "business" | "enterprise" — see backend/src/plans.js
+  billingCycle String        @default("monthly") // "monthly" | "yearly" — cost is branchCount × rate, see backend/src/plans.js
+  expiryDate   DateTime?     // when set and in the past, access is blocked regardless of `status`
+  logoData     String?       @db.Text // data URI, e.g. "data:image/png;base64,..."
+  phone        String?
+  email        String?
+  address      String?
+  country      String?
+  city         String?
+  createdAt    DateTime      @default(now())
+  branches     Branch[]
+  memberships  Membership[]
+  activityLogs ActivityLog[]
   notifications Notification[]
-  payments      Payment[]
+  payments     Payment[]
 }
 
 model Branch {
   id             Int            @id @default(autoincrement())
   name           String
   organizationId Int
-  approved       Boolean        @default(true)
-  createdAt      DateTime       @default(now())
   organization   Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  approved       Boolean        @default(true) // false = pending super-admin approval; blocks scanning until approved
+  createdAt      DateTime       @default(now())
   memberships    Membership[]
   prescriptions  Prescription[]
 }
 
+// One login — a person's identity, shared across every company they
+// belong to. Their role, branch, and access at each company live on
+// their Membership row for that company, not here.
 model User {
-  id            Int            @id @default(autoincrement())
-  email         String         @unique
-  passwordHash  String
-  globalRole    String?
-  avatarData    String?
-  createdAt     DateTime       @default(now())
-  memberships   Membership[]
+  id           Int          @id @default(autoincrement())
+  email        String       @unique
+  passwordHash String
+  // Platform-level only — "super_admin" or null. A super_admin has no
+  // memberships; every other role is company-scoped via Membership.
+  globalRole   String?
+  // Only meaningful for super_admin users. null = unrestricted (every
+  // builder.* permission) — the state every super admin starts in, and
+  // the only state that can grant/restrict other admins. A JSON array
+  // like ["builder.view","builder.edit"] limits them to just those.
+  builderPermissions String? @db.Text
+  avatarData   String?      @db.Text // data URI, e.g. "data:image/jpeg;base64,..."
+  createdAt    DateTime     @default(now())
+  memberships  Membership[]
   prescriptions Prescription[]
 }
 
+// A person's access at one specific company: their role there and,
+// for non-owner/admin roles, which branch they work at. A user with
+// memberships at two companies has two rows here — one per company —
+// and switches between them without logging out (see /api/auth/switch-company).
 model Membership {
   id             Int          @id @default(autoincrement())
   userId         Int
-  organizationId Int
-  role           String       @default("employee")
-  branchId       Int?
-  createdAt      DateTime     @default(now())
-  branch         Branch?      @relation(fields: [branchId], references: [id])
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organizationId Int
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  role           String       @default("employee") // "owner" | "company_admin" | "branch_manager" | "employee" | "viewer"
+  branchId       Int?
+  branch         Branch?      @relation(fields: [branchId], references: [id])
+  createdAt      DateTime     @default(now())
 
   @@unique([userId, organizationId])
 }
@@ -69,67 +86,120 @@ model Prescription {
   id         Int                 @id @default(autoincrement())
   doctorName String              @default("")
   phone      String              @default("")
-  medicines  String
-  category   String              @default("Medicine")
-  source     String              @default("Private")
-  status     String              @default("pending")
-  branchId   Int
-  userId     Int
-  createdAt  DateTime            @default(now())
-  branch     Branch              @relation(fields: [branchId], references: [id], onDelete: Cascade)
-  user       User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  medicines  String              @db.Text // JSON-encoded string[]
+  category   String              @default("Medicine") // "Medicine" | "Dairy" | "Beauty" | "Equipment"
+  source     String              @default("Private") // "Government" | "Private"
+  status     String              @default("pending") // "pending" | "approved" | "rejected"
   images     PrescriptionImage[]
+  branchId   Int
+  branch     Branch              @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  userId     Int
+  user       User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt  DateTime            @default(now())
 }
 
 model PrescriptionImage {
   id             Int          @id @default(autoincrement())
-  imageData      String
+  imageData      String       @db.Text // data URI, e.g. "data:image/jpeg;base64,..."
   prescriptionId Int
-  createdAt      DateTime     @default(now())
   prescription   Prescription @relation(fields: [prescriptionId], references: [id], onDelete: Cascade)
+  createdAt      DateTime     @default(now())
 }
 
+// A remembered photo per item/medicine name, so the next time someone
+// scans the same item its picture can be shown automatically. Scoped per
+// organization so pharmacies never see each other's item photos.
+// A remembered photo per item/medicine name, shared across the WHOLE
+// platform (not scoped to one company) — a medicine looks the same no
+// matter which pharmacy is using the app, so every company benefits from
+// photos any company has verified, instead of each re-uploading its own.
+// createdByOrgId/Name record which company last saved this photo, purely
+// for provenance — they never restrict who can see or reuse the photo.
 model ItemImage {
-  name             String   @id
-  imageData        String
+  name             String   @id // normalized (trimmed, lowercased) medicine name
+  imageData        String   @db.Text
   createdByOrgId   Int?
   createdByOrgName String?
   updatedAt        DateTime @updatedAt
 }
 
+// A record of who did what, for a company's own audit trail and for the
+// platform's activity log. organizationId is null only for platform-level
+// (super_admin) actions like creating or suspending a company.
 model ActivityLog {
   id             Int           @id @default(autoincrement())
   organizationId Int?
-  userId         Int?
-  userEmail      String?
-  action         String
-  details        String?
-  createdAt      DateTime      @default(now())
   organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  userId         Int?
+  userEmail      String? // kept even if the user is later deleted
+  action         String // e.g. "login", "prescription_scanned", "user_created"
+  details        String? // short human-readable extra context
+  createdAt      DateTime      @default(now())
 }
 
+// ---------------------------------------------------------------------
+// Module Builder (platform-wide, super-admin only for now).
+// A Module is defined by structured data (never just generated HTML),
+// so both the Code and Studio creation paths produce the same shape and
+// can be rendered/published the same way later.
+// ---------------------------------------------------------------------
+model Module {
+  id             Int             @id @default(autoincrement())
+  name           String
+  description    String?
+  creationMethod String // "code" | "studio"
+  status         String          @default("draft") // "draft" | "preview" | "testing" | "approved" | "published"
+  definition     String          @default("{}") @db.Text // JSON: metadata, pages, components, dataSources, apis, actions, permissions, settings
+  createdBy      String? // email of the super admin who created it
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  versions       ModuleVersion[]
+}
+
+// A saved snapshot of a module's definition — the version history behind
+// "View changes / Compare / Restore".
+model ModuleVersion {
+  id            Int      @id @default(autoincrement())
+  moduleId      Int
+  module        Module   @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  versionNumber Int // 1, 2, 3... per module
+  definition    String   @db.Text // JSON snapshot at the time this version was saved
+  note          String? // optional human note about what changed
+  createdBy     String?
+  createdAt     DateTime @default(now())
+
+  @@unique([moduleId, versionNumber])
+}
+
+// An in-app notification. userId set = personal (e.g. "your scan was
+// rejected"); userId null = broadcast to every owner/company_admin of
+// that organization (e.g. "your company was suspended").
 model Notification {
   id             Int           @id @default(autoincrement())
   organizationId Int?
+  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   userId         Int?
   title          String
   body           String?
   read           Boolean       @default(false)
   createdAt      DateTime      @default(now())
-  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 }
 
+// A billing payment — either a manual claim ("I've paid, please
+// activate me") that the super admin reviews and approves, or (once
+// wired up) a real gateway transaction. Both paths end the same way:
+// approving a Payment activates the company for one billing period.
 model Payment {
   id             Int          @id @default(autoincrement())
   organizationId Int
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   amount         Float
   currency       String       @default("USD")
-  method         String
-  status         String       @default("pending")
-  reference      String?
-  requestedBy    String?
-  reviewedBy     String?
+  method         String // "manual" | "zaincash" (more gateways can be added later)
+  status         String       @default("pending") // "pending" | "approved" | "rejected"
+  reference      String? // gateway transaction id, or a note for a manual claim
+  requestedBy    String? // email of whoever submitted the claim
+  reviewedBy     String? // super admin email who approved/rejected it
   createdAt      DateTime     @default(now())
   reviewedAt     DateTime?
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 }
